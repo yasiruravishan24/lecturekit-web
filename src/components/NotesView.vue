@@ -74,18 +74,36 @@
       </q-tab-panel>
 
       <q-tab-panel name="quiz" class="lk-no-print">
-        <div v-if="quizCount != null" class="q-mb-md">
-          {{ plural(quizCount, 'question') }}. The correct answers are shown after you submit the whole quiz.
-        </div>
-        <q-btn unelevated color="primary" icon="quiz" label="Take quiz" :to="`/quiz/${sessionId}`" />
-        <div v-if="attempts.length" class="q-mt-lg">
-          <div class="lk-label q-mb-sm">Your attempts</div>
-          <q-list bordered separator style="max-width: 420px; border-color: var(--lk-border); border-radius: 4px">
-            <q-item v-for="a in attempts" :key="a.id" dense>
-              <q-item-section>{{ a.score }} / {{ a.total }}</q-item-section>
-              <q-item-section side>{{ formatDate(a.submitted_at, true) }}</q-item-section>
-            </q-item>
-          </q-list>
+        <div class="lk-quizwrap">
+          <section class="lk-quiz-hero">
+            <div class="lk-quiz-icon"><q-icon name="quiz" size="30px" /></div>
+            <div class="lk-quiz-title">{{ attempts.length ? 'Try again and beat your score' : 'Test what you learned' }}</div>
+            <div class="lk-meta">Multiple choice, one answer each. The correct answers and explanations appear after you submit the whole quiz.</div>
+            <div class="lk-quiz-stats">
+              <div><b>{{ quizCount != null ? quizCount : '-' }}</b><span>Questions</span></div>
+              <div><b>{{ quizCount != null ? `${Math.max(1, Math.round(quizCount * 0.75))} min` : '-' }}</b><span>About</span></div>
+              <div><b>{{ best == null ? '-' : `${best}%` }}</b><span>Best score</span></div>
+            </div>
+            <q-btn unelevated color="primary" size="lg" no-caps icon="play_arrow" :label="attempts.length ? 'Retake quiz' : 'Take quiz'" :to="`/quiz/${sessionId}`" class="full-width" />
+          </section>
+
+          <section class="lk-quiz-history">
+            <div class="lk-label q-mb-sm">Your attempts</div>
+            <div v-if="!attempts.length" class="lk-quiz-none">
+              <q-icon name="history" size="28px" />
+              <div>No attempts yet. Your scores will be listed here.</div>
+            </div>
+            <ul v-else class="lk-attempts">
+              <li v-for="(a, i) in attempts" :key="a.id">
+                <span class="lk-attempt-n">#{{ attempts.length - i }}</span>
+                <div class="lk-attempt-body">
+                  <div class="lk-attempt-top"><b>{{ a.score }} / {{ a.total }}</b><span class="lk-meta">{{ formatDate(a.submitted_at, true) }}</span></div>
+                  <div class="lk-bar"><span :class="barClass(a)" :style="{ width: pct(a) + '%' }" /></div>
+                </div>
+                <span class="lk-attempt-pct">{{ pct(a) }}%</span>
+              </li>
+            </ul>
+          </section>
         </div>
       </q-tab-panel>
 
@@ -133,6 +151,9 @@ const momentsEmpty = computed(() => (props.replay && props.replay.kind === 'audi
   ? { title: 'This recording has no picture', text: 'Pictures of the board and screen come from video recordings.' }
   : { title: 'No board or screen content found', text: 'Pictures appear here when the recording shows a board, a slide or a screen.' }))
 const active = ref(0)
+const pct = (a) => (a.total ? Math.round((100 * a.score) / a.total) : 0)
+const barClass = (a) => (pct(a) >= 70 ? 'good' : pct(a) >= 40 ? 'mid' : 'low')
+const best = computed(() => (props.attempts.length ? Math.max(...props.attempts.map(pct)) : null))
 const scroller = ref(null)
 const known = ref(new Set())
 function toggleKnown(i) {
@@ -160,6 +181,25 @@ function goTo(i) {
 .lk-short-card.known > span:last-child { opacity: 0.7; }
 .lk-short-n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--lk-tint); color: var(--lk-primary); font-size: 13px; font-weight: 500; display: grid; place-items: center; }
 .lk-short-card.known .lk-short-n { background: var(--lk-positive); color: #fff; }
+.lk-quizwrap { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.lk-quiz-hero { background: var(--lk-tint); border-radius: 16px; padding: 24px; text-align: center; }
+.lk-quiz-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--lk-surface); color: var(--lk-primary); display: grid; place-items: center; margin: 0 auto 12px; }
+.lk-quiz-title { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 6px; }
+.lk-quiz-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+.lk-quiz-stats > div { background: var(--lk-surface); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; }
+.lk-quiz-stats b { font-size: 18px; font-weight: 500; }
+.lk-quiz-stats span { font-size: 12px; color: var(--lk-text-2); }
+.lk-quiz-none { border: 1px dashed var(--lk-border); border-radius: 12px; padding: 28px; text-align: center; color: var(--lk-text-2); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.lk-attempts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lk-attempts li { display: flex; align-items: center; gap: 14px; border: 1px solid var(--lk-border); background: var(--lk-surface); border-radius: 12px; padding: 12px 16px; }
+.lk-attempt-n { flex: none; width: 36px; color: var(--lk-text-2); font-variant-numeric: tabular-nums; }
+.lk-attempt-body { flex: 1 1 auto; min-width: 0; }
+.lk-attempt-top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.lk-bar { height: 8px; border-radius: 4px; background: var(--lk-border); overflow: hidden; }
+.lk-bar span { display: block; height: 100%; border-radius: 4px; }
+.lk-bar .good { background: var(--lk-positive); } .lk-bar .mid { background: var(--lk-warning); } .lk-bar .low { background: var(--lk-negative); }
+.lk-attempt-pct { flex: none; width: 48px; text-align: right; font-weight: 500; }
+@media (max-width: 860px) { .lk-quizwrap { grid-template-columns: 1fr; } }
 .lk-topic-title { font-size: 20px; font-weight: 500; margin: 0 0 14px; letter-spacing: -0.01em; }
 .lk-summary { background: var(--lk-tint); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; }
 .lk-summary p { margin: 4px 0 0; line-height: 1.65; }
