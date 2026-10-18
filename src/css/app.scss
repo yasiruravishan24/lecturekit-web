@@ -169,7 +169,7 @@ body.body--dark .lk-account-menu .lk-acc-logout, body.body--dark .lk-account-men
 @media (min-width: 1024px) and (min-height: 780px) {
   .q-page.lk-fit { height: calc(100vh - 50px); min-height: 0 !important; display: flex; flex-direction: column; overflow: hidden; }
   .q-page.lk-fit > .lk-title { flex: none; }
-  .q-page.lk-fit > .lk-new-grid { flex: 1 1 auto; }
+  .q-page.lk-fit > .lk-new-grid, .q-page.lk-fit > .lk-res { flex: 1 1 auto; }
 }
 @media print {
   .q-page.lk-fill { height: auto !important; overflow: visible !important; display: block !important; }

@@ -94,7 +94,7 @@
               <div>No attempts yet. Your scores will be listed here.</div>
             </div>
             <ul v-else class="lk-attempts">
-              <li v-for="(a, i) in attempts" :key="a.id">
+              <li v-for="(a, i) in newest" :key="a.id">
                 <span class="lk-attempt-n">#{{ attempts.length - i }}</span>
                 <div class="lk-attempt-body">
                   <div class="lk-attempt-top"><b>{{ a.score }} / {{ a.total }}</b><span class="lk-meta">{{ formatDate(a.submitted_at, true) }}</span></div>
@@ -153,6 +153,7 @@ const momentsEmpty = computed(() => (props.replay && props.replay.kind === 'audi
 const active = ref(0)
 const pct = (a) => (a.total ? Math.round((100 * a.score) / a.total) : 0)
 const barClass = (a) => (pct(a) >= 70 ? 'good' : pct(a) >= 40 ? 'mid' : 'low')
+const newest = computed(() => [...props.attempts].reverse())            // the server lists them oldest first
 const best = computed(() => (props.attempts.length ? Math.max(...props.attempts.map(pct)) : null))
 const scroller = ref(null)
 const known = ref(new Set())

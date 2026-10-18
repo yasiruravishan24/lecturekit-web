@@ -115,6 +115,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   await expect(page.getByText('Strings and input')).toBeVisible()
   await page.goto('/quizzes')
   await expect(page.getByText(/Last score/)).toBeVisible()
+  await shot('10b-quizzes')
 
   // settings and deleting the account
   await page.goto('/settings')
