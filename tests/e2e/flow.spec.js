@@ -93,7 +93,9 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   expect(download.suggestedFilename()).toMatch(/\.pdf$/)
   expect(readFileSync(await download.path()).subarray(0, 4).toString()).toBe('%PDF')
   await page.getByRole('tab', { name: /Short notes/ }).click()
-  await expect(page.getByText('Short revision notes')).toBeVisible()
+  await expect(page.getByText('Quick revision')).toBeVisible()
+  await page.locator('.lk-short-card').first().click()                                    // tick a point as known
+  await expect(page.locator('.lk-short-card.known')).toHaveCount(1)
 
   // the quiz: answer every question with the first option, then submit
   await page.getByRole('link', { name: 'Take quiz' }).first().click()

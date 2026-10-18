@@ -55,9 +55,22 @@
         </div>
       </q-tab-panel>
 
-      <q-tab-panel name="short">
-        <div class="lk-label q-mb-sm">Short revision notes</div>
-        <ul style="margin: 0; padding-left: 20px; line-height: 1.8"><li v-for="(s, i) in notes.short_notes" :key="i">{{ s }}</li></ul>
+      <q-tab-panel name="short" class="lk-short-panel">
+        <div class="lk-short-head">
+          <div>
+            <div class="lk-short-title">Quick revision</div>
+            <div class="lk-meta">{{ plural(notes.short_notes.length, 'point') }} to remember. Tick each one when you know it.</div>
+          </div>
+          <div class="lk-short-count lk-no-print">{{ known.size }} / {{ notes.short_notes.length }}</div>
+        </div>
+        <q-linear-progress :value="notes.short_notes.length ? known.size / notes.short_notes.length : 0" rounded size="6px" color="positive" track-color="grey-3" class="lk-no-print q-mb-md" />
+        <div class="lk-short-grid">
+          <button v-for="(s, i) in notes.short_notes" :key="i" type="button" class="lk-short-card" :class="{ known: known.has(i) }"
+                  :aria-pressed="known.has(i)" @click="toggleKnown(i)">
+            <span class="lk-short-n">{{ known.has(i) ? '✓' : i + 1 }}</span>
+            <span>{{ s }}</span>
+          </button>
+        </div>
       </q-tab-panel>
 
       <q-tab-panel name="quiz" class="lk-no-print">
@@ -121,6 +134,12 @@ const momentsEmpty = computed(() => (props.replay && props.replay.kind === 'audi
   : { title: 'No board or screen content found', text: 'Pictures appear here when the recording shows a board, a slide or a screen.' }))
 const active = ref(0)
 const scroller = ref(null)
+const known = ref(new Set())
+function toggleKnown(i) {
+  const s = new Set(known.value)
+  s.has(i) ? s.delete(i) : s.add(i)
+  known.value = s
+}
 
 function goTo(i) {
   if (i < 0 || i >= props.notes.full_notes.length) return
@@ -130,6 +149,17 @@ function goTo(i) {
 </script>
 
 <style scoped>
+.lk-short-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 10px; }
+.lk-short-title { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.lk-short-count { font-size: 14px; font-weight: 500; color: var(--lk-primary); }
+.lk-short-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.lk-short-card { display: flex; gap: 12px; align-items: flex-start; text-align: left; font: inherit; color: inherit; line-height: 1.55; cursor: pointer; background: var(--lk-surface); border: 1px solid var(--lk-border); border-radius: 12px; padding: 12px 16px; align-items: center; transition: border-color .15s, background .15s; }
+.lk-short-card:hover { border-color: var(--lk-primary); }
+.lk-short-card:focus-visible { outline: 2px solid var(--lk-primary); outline-offset: 2px; }
+.lk-short-card.known { background: var(--lk-tint); border-color: var(--lk-positive); }
+.lk-short-card.known > span:last-child { opacity: 0.7; }
+.lk-short-n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--lk-tint); color: var(--lk-primary); font-size: 13px; font-weight: 500; display: grid; place-items: center; }
+.lk-short-card.known .lk-short-n { background: var(--lk-positive); color: #fff; }
 .lk-topic-title { font-size: 20px; font-weight: 500; margin: 0 0 14px; letter-spacing: -0.01em; }
 .lk-summary { background: var(--lk-tint); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; }
 .lk-summary p { margin: 4px 0 0; line-height: 1.65; }
