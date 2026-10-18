@@ -3,6 +3,7 @@
     <h1 class="lk-title">Quiz</h1>
 
     <error-banner :message="error" />
+    <error-banner :message="notice" info />
 
     <template v-if="questions.length">
       <div class="row items-center q-mb-sm" style="max-width: 1000px">
@@ -15,6 +16,7 @@
         <q-card-section>
           <div class="q-mb-md">
             <span v-if="q.bloom_level" class="lk-chip bloom q-mr-sm">Bloom level: {{ cap(q.bloom_level) }}</span>
+            <span v-if="q.source === 'board'" class="lk-chip info q-mr-sm"><q-icon name="draw" size="14px" /> From the board</span>
           </div>
           <div id="question-text" style="font-size: 18px; font-weight: 500" class="q-mb-md">{{ q.question }}</div>
           <q-option-group v-model="chosen[q.id]" :options="options" color="primary" aria-labelledby="question-text" />
@@ -59,6 +61,7 @@ const chosen = reactive({})
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
+const notice = ref('')
 
 const q = computed(() => questions.value[index.value])
 const options = computed(() => q.value.options.map((label, value) => ({ label, value })))
@@ -73,10 +76,21 @@ async function submit() {
     quizStore.setResult(props.sessionId, questions.value, chosen, result)
     router.replace({ name: 'quiz-result', params: { sessionId: props.sessionId } })
   } catch (e) {
-    error.value = friendly(e)
+    if (e.code === 'quiz_changed') await reload()
+    else error.value = friendly(e)
   } finally {
     busy.value = false
   }
+}
+
+// questions about the board were added while this page was open: fetch them, keep the answers already given, go to the first new one
+async function reload() {
+  const before = questions.value.length
+  const quiz = await quizApi.getQuiz(props.sessionId)
+  questions.value = quiz.questions
+  const firstNew = quiz.questions.findIndex((x) => !Number.isInteger(chosen[x.id]))
+  index.value = Math.max(0, firstNew)
+  notice.value = `${plural(quiz.questions.length - before, 'new question')} about the board ${quiz.questions.length - before === 1 ? 'was' : 'were'} added to this quiz. Answer ${quiz.questions.length - before === 1 ? 'it' : 'them'} and submit again; your other answers are kept.`
 }
 
 onMounted(async () => {

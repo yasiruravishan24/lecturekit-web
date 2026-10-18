@@ -160,6 +160,17 @@ body.body--dark .lk-account-menu .lk-acc-logout, body.body--dark .lk-account-men
 .q-menu .q-item__section--avatar { min-width: 0; padding-right: 14px; }
 .q-menu .q-item:hover { background: var(--lk-tint); }
 
+/* a lecture with notes fills the screen: the page itself does not scroll, the notes do (inside their own area) */
+@media (min-width: 1024px) {
+  .q-page.lk-fill { height: calc(100vh - 50px); min-height: 0 !important; display: flex; flex-direction: column; overflow: hidden; }
+  .q-page.lk-fill > .lk-notes-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .lk-notes-card > .q-tab-panels { flex: 1 1 auto; min-height: 0; }
+}
+@media print {
+  .q-page.lk-fill { height: auto !important; overflow: visible !important; display: block !important; }
+  .lk-notes-card, .lk-notes-card > .q-tab-panels, .lk-notes-card .q-panel { height: auto !important; overflow: visible !important; display: block !important; }
+}
+
 /* page change */
 .lk-fade-enter-active, .lk-fade-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
 .lk-fade-enter-from { opacity: 0; transform: translateY(6px); }

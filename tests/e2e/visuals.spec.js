@@ -36,9 +36,21 @@ test('board pictures, refined notes, screenshots and a replay you can seek in', 
   await video.evaluate((v) => v.pause())
   await page.screenshot({ path: 'test-results/shots/v3-replay.png', fullPage: true })
 
+  // the quiz grew by questions about the board, after the old ones
+  await page.goto(`/sessions/${session.id}`)
+  await expect(page.getByRole('tab', { name: /Quiz \((1[1-3])\)/ })).toBeVisible({ timeout: 120000 })
+  await page.goto(`/quiz/${session.id}`)
+  await expect(page.getByText(/Question 1 of 1[1-3]/)).toBeVisible()
+  await expect(page.getByText('From the board')).toHaveCount(0)                              // the first questions are the old ones
+  for (let i = 0; i < 10; i++) await page.getByRole('button', { name: 'Next' }).click()
+  await expect(page.getByText('From the board')).toBeVisible()                               // the new ones come last
+  await page.screenshot({ path: 'test-results/shots/v4-board-question.png' })
+
+  await page.goto(`/sessions/${session.id}`)
+  await expect(page.getByText('Board and screen', { exact: true })).toBeVisible()      // the "Built from" card names the pictures too
   // the notes now carry the board content, and the storage is counted
   await page.getByRole('tab', { name: /Full notes/ }).click()
-  await expect(page.getByText(/Newton|F = m/).first()).toBeVisible()
+  expect(await page.locator('.lk-topic').filter({ hasText: /Newton|F = m/ }).count()).toBeGreaterThan(0)      // the board content is in the notes
   await page.goto('/settings')
   await expect(page.getByText(/used/)).toBeVisible()
   await expect(page.getByText('10 GB available')).toBeVisible()

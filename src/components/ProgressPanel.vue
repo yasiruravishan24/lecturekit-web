@@ -76,10 +76,10 @@ const elapsedText = computed(() => {
 </script>
 
 <style scoped>
-.lk-progress { max-width: 860px; overflow: hidden; }
+.lk-progress { overflow: hidden; }
 .lk-progress-head { display: flex; align-items: center; gap: 16px; padding: 22px 28px 0; }
-.lk-progress-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; align-items: center; padding: 24px 28px; }
-.lk-ring { text-align: center; }
+.lk-progress-body { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); gap: 32px; align-items: center; padding: 24px 28px; }
+.lk-ring { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .lk-ring-value { font-size: 38px; font-weight: 500; letter-spacing: -0.02em; color: var(--lk-text); }
 .lk-ring-value span { font-size: 18px; color: var(--lk-text-2); margin-left: 2px; }
 .lk-ring-stage { margin-top: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; }

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="lk-page">
+  <q-page class="lk-page" :class="{ 'lk-fill': showNotes }">
     <template v-if="session">
       <nav v-if="where" class="lk-crumbs lk-no-print" aria-label="Breadcrumb">
         <router-link :to="{ path: '/courses', query: { course: where.course.id } }">{{ where.course.name }}</router-link>
@@ -38,7 +38,7 @@
       <progress-panel v-if="isBusy(session)" :job="job" :has-slides="session.has_slides" />
 
       <!-- failed -->
-      <q-card v-else-if="session.state === 'failed'" flat bordered class="lk-card" style="max-width: 720px">
+      <q-card v-else-if="session.state === 'failed'" flat bordered class="lk-card">
         <q-card-section>
           <div class="lk-section-title">The notes could not be made</div>
           <error-banner class="q-mt-md" :message="failedMessage" />
@@ -48,7 +48,7 @@
       </q-card>
 
       <!-- uploaded, waiting for Make notes -->
-      <q-card v-else-if="session.state === 'uploaded'" flat bordered class="lk-card" style="max-width: 720px">
+      <q-card v-else-if="session.state === 'uploaded'" flat bordered class="lk-card">
         <q-card-section>
           <div class="lk-section-title">Ready to make notes</div>
           <div class="lk-meta q-mb-md">{{ fileSummary }}</div>
@@ -57,7 +57,7 @@
       </q-card>
 
       <!-- live recording that was not finished -->
-      <q-card v-else-if="session.state === 'live'" flat bordered class="lk-card" style="max-width: 720px">
+      <q-card v-else-if="session.state === 'live'" flat bordered class="lk-card">
         <q-card-section>
           <div class="lk-section-title">This recording was not finished</div>
           <div class="lk-meta q-mb-md">{{ liveText }}</div>
@@ -66,7 +66,7 @@
       </q-card>
 
       <!-- empty -->
-      <q-card v-else-if="session.state === 'empty'" flat bordered class="lk-card" style="max-width: 720px">
+      <q-card v-else-if="session.state === 'empty'" flat bordered class="lk-card">
         <q-card-section>
           <div class="lk-section-title">No recording yet</div>
           <div class="lk-meta q-mb-md">Add a recording to make notes and a quiz.</div>
@@ -130,6 +130,7 @@ const startingReplay = ref(false)
 const bgBusy = (r) => !!r && (['queued', 'processing'].includes(r.state) || ['queued', 'processing'].includes(r.visuals_state))
 const visualsBusy = computed(() => !!replay.value && ['queued', 'processing'].includes(replay.value.visuals_state))
 const canMakeReplay = computed(() => !!session.value && session.value.files.some((f) => f.kind === 'recording' && !f.removed))
+const showNotes = computed(() => !!session.value && session.value.state === 'done' && !!notes.value)
 const where = computed(() => (session.value ? library.module(session.value.module_id) : null))
 const slideCount = computed(() => (session.value ? session.value.files.filter((f) => f.kind === 'slides').length : 0))
 const meta = computed(() => {
@@ -203,7 +204,11 @@ async function refreshExtras() {
     shots.value = await sessionsApi.listShots(props.id)
     if (before && ['queued', 'processing'].includes(before) && replay.value.visuals_state === 'done') {
       notes.value = await sessionsApi.getNotes(props.id)                  // the notes now include what was on the board
-      $q.notify({ type: 'positive', message: 'The notes now include the board and screen content.' })
+      const was = quizCount.value
+      const quiz = await quizApi.getQuiz(props.id)
+      quizCount.value = quiz.questions.length
+      const added = was == null ? 0 : quiz.questions.length - was
+      $q.notify({ type: 'positive', message: added > 0 ? `The notes now include the board and screen content, and ${plural(added, 'question')} about the board ${added === 1 ? 'was' : 'were'} added to the quiz.` : 'The notes now include the board and screen content.' })
     }
   } catch { /* the extras are optional: the notes stay usable */ }
   if (!gone && bgBusy(replay.value)) extrasTimer = setTimeout(refreshExtras, 4000)
