@@ -17,7 +17,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   const shot = (name) => page.screenshot({ path: path.join(shots, `${name}.png`), fullPage: true })
 
   // sign up
-  await page.goto('/#/register')
+  await page.goto('/register')
   await page.getByLabel('Full name').fill('E2E Student')
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password (at least 8 characters)').fill(password)
@@ -33,7 +33,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
 
   // confirm by the admin command (the real code is in the email), then log in
   execSync(`docker compose exec -T app python -m server.admin verify-email ${email}`, { cwd: root })
-  await page.goto('/#/login')
+  await page.goto('/login')
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Log in' }).click()
@@ -42,7 +42,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   await shot('04-dashboard-empty')
 
   // a course and a module
-  await page.goto('/#/courses')
+  await page.goto('/courses')
   await page.getByRole('button', { name: 'Add course' }).click()
   await page.getByLabel('Course name').fill('BSc Computing')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
@@ -54,7 +54,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   await shot('05-my-courses')
 
   // a new session: a recording and slides
-  await page.goto('/#/new')
+  await page.goto('/new')
   await expect(page.getByLabel('Module *')).toHaveValue('Programming Fundamentals')
   await page.getByLabel('Session title *').fill('Strings and input')
   const inputs = page.locator('input[type=file]')
@@ -88,13 +88,13 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   await shot('10-quiz-result')
 
   // the dashboard and the quiz list now show the lecture
-  await page.goto('/#/')
+  await page.goto('/')
   await expect(page.getByText('Strings and input')).toBeVisible()
-  await page.goto('/#/quizzes')
+  await page.goto('/quizzes')
   await expect(page.getByText(/Last score/)).toBeVisible()
 
   // settings and deleting the account
-  await page.goto('/#/settings')
+  await page.goto('/settings')
   await shot('11-settings')
   await page.getByRole('button', { name: 'Delete account' }).click()
   await page.getByLabel(/Type .* to confirm/).fill(email)

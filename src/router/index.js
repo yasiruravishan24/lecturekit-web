@@ -1,18 +1,19 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// hash mode: the server only serves index.html at "/", so /#/sessions/12 works without extra server code
+const guestRoute = (name, page) => ({
+  path: `/${name}`,
+  component: () => import('../layouts/AuthLayout.vue'),
+  meta: { guest: true },
+  children: [{ path: '', name, component: page }],
+})
+
+// normal addresses (/sessions/12): the server answers any address that is not a file or /api with index.html
 export const routes = [
-  {
-    path: '/',
-    component: () => import('../layouts/AuthLayout.vue'),
-    meta: { guest: true },
-    children: [
-      { path: 'login', name: 'login', component: () => import('../pages/LoginPage.vue') },
-      { path: 'register', name: 'register', component: () => import('../pages/RegisterPage.vue') },
-      { path: 'verify', name: 'verify', component: () => import('../pages/VerifyPage.vue') },
-    ],
-  },
+  // each sign-in page is its own route inside the centered layout (a shared parent at "/" would also match "/" itself)
+  guestRoute('login', () => import('../pages/LoginPage.vue')),
+  guestRoute('register', () => import('../pages/RegisterPage.vue')),
+  guestRoute('verify', () => import('../pages/VerifyPage.vue')),
   {
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),
@@ -32,7 +33,7 @@ export const routes = [
   },
 ]
 
-export const router = createRouter({ history: createWebHashHistory(), routes, scrollBehavior: () => ({ top: 0 }) })
+export const router = createRouter({ history: createWebHistory(), routes, scrollBehavior: () => ({ top: 0 }) })
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()

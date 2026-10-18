@@ -6,7 +6,7 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 const api = process.env.LK_API || 'https://localhost:8443'
 
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [vue({ template: { transformAssetUrls } }), quasar()],
   server: { port: 5173, proxy: { '/api': { target: api, changeOrigin: true, secure: false } } },
   test: { environment: 'jsdom', include: ['tests/**/*.test.js'] },

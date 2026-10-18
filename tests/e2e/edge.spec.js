@@ -8,12 +8,27 @@ import { loginAs, makeSession, makeUser, sample, startProcessing, upload, waitDo
 const shots = path.join(import.meta.dirname, '../../test-results/shots')
 mkdirSync(shots, { recursive: true })
 
+test('a logged-out visitor is sent to the login page, whatever address is opened', async ({ page }) => {
+  for (const address of ['/', '/courses', '/sessions/1', '/nowhere']) {
+    await page.goto(address)
+    await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible()
+  }
+  await page.goto('/sessions/1')
+  await expect(page).toHaveURL(/redirect=/)                            // and back to the lecture after logging in
+})
+
+test('an old address with a # still works', async ({ page }) => {
+  await page.goto('/#/nowhere')
+  await expect(page).toHaveURL(/\/login\?redirect=.*nowhere$/)
+  await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible()
+})
+
 test('a recording that cannot be read shows a plain message and Try again', async ({ page }) => {
   const user = await makeUser('failed')
   const { session } = await makeSession(user, 'Broken recording')
   await upload(user, session.id, [['broken.mp4', Buffer.from('this is not a video')]])
   await loginAs(page, user)
-  await page.goto(`/#/sessions/${session.id}`)
+  await page.goto(`/sessions/${session.id}`)
   await expect(page.getByText('Ready to make notes')).toBeVisible()
   await page.getByRole('button', { name: 'Make notes' }).click()
   await expect(page.getByText('The notes could not be made')).toBeVisible({ timeout: 60000 })
@@ -32,7 +47,7 @@ test('the daily limit is explained and the lecture stays uploaded', async ({ pag
     await waitDone(user, (await startProcessing(user, s.id)).json.job_id)
   }
   await loginAs(page, user)
-  await page.goto('/#/new')
+  await page.goto('/new')
   await page.getByLabel('Session title *').fill('Sixth lecture')
   await page.locator('input[type=file]').nth(0).setInputFiles(sample('chunk0.m4a'))
   await page.getByRole('button', { name: 'Create notes and quiz' }).click()
@@ -46,10 +61,10 @@ test("another account cannot open someone else's lecture", async ({ page }) => {
   const { session } = await makeSession(owner, 'Private lecture')
   const other = await makeUser('other')
   await loginAs(page, other)
-  await page.goto(`/#/sessions/${session.id}`)
+  await page.goto(`/sessions/${session.id}`)
   await expect(page.getByText('This lecture was not found.')).toBeVisible()
   await expect(page.getByText('Private lecture')).toHaveCount(0)
-  await page.goto('/#/quiz/' + session.id)
+  await page.goto('/quiz/' + session.id)
   await expect(page.getByText('This quiz is not available yet.')).toBeVisible()
 })
 
@@ -57,7 +72,7 @@ test('a lecture saved in two files is joined, and the small-screen layout and pr
   const user = await makeUser('parts')
   const { course } = await makeSession(user, 'Unused')
   await loginAs(page, user)
-  await page.goto(`/#/new?course=${course.id}`)
+  await page.goto(`/new?course=${course.id}`)
   await page.getByLabel('Session title *').fill('Two parts')
   const inputs = page.locator('input[type=file]')
   await inputs.nth(0).setInputFiles(sample('sample-recording.m4a'))

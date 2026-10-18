@@ -7,6 +7,9 @@ import App from './App.vue'
 import { router } from './router'
 import { useAuthStore } from './stores/auth'
 
+// an old address with a # (/#/sessions/12) becomes the normal one (/sessions/12)
+if (location.hash.startsWith('#/')) history.replaceState(null, '', location.hash.slice(1))
+
 const app = createApp(App)
 app.use(Quasar, {
   plugins: { Notify, Dialog },
