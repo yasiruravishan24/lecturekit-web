@@ -18,7 +18,7 @@
             <q-btn outline color="primary" icon="download" label="Export" icon-right="arrow_drop_down" class="q-mr-sm">
               <q-menu><q-list style="min-width: 220px">
                 <q-item clickable v-close-popup @click="downloadMarkdown"><q-item-section avatar><q-icon name="download" /></q-item-section><q-item-section>Download Markdown</q-item-section></q-item>
-                <q-item clickable v-close-popup @click="printNotes"><q-item-section avatar><q-icon name="print" /></q-item-section><q-item-section>Print / save as PDF</q-item-section></q-item>
+                <q-item clickable v-close-popup @click="downloadPdf"><q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section><q-item-section>Download PDF</q-item-section></q-item>
               </q-list></q-menu>
             </q-btn>
             <q-btn unelevated color="primary" icon="quiz" label="Take quiz" :to="`/quiz/${session.id}`" class="q-mr-xs" />
@@ -285,18 +285,19 @@ async function remove() {
   } catch (e) { $q.notify({ type: 'negative', message: friendly(e) }) }
 }
 
-async function downloadMarkdown() {
-  try {
-    const blob = await sessionsApi.exportMarkdown(props.id)
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `${session.value.title.replace(/[^\w\- ]+/g, '').trim() || 'notes'}.md`
-    a.click()
-    URL.revokeObjectURL(a.href)
-  } catch (e) { $q.notify({ type: 'negative', message: friendly(e) }) }
+async function saveFile(blob, ext) {
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${session.value.title.replace(/[^\w\- ]+/g, '').trim() || 'notes'}.${ext}`
+  a.click()
+  URL.revokeObjectURL(a.href)
 }
-
-const printNotes = () => window.print()
+async function downloadMarkdown() {
+  try { await saveFile(await sessionsApi.exportMarkdown(props.id), 'md') } catch (e) { $q.notify({ type: 'negative', message: friendly(e) }) }
+}
+async function downloadPdf() {
+  try { await saveFile(await sessionsApi.exportPdf(props.id), 'pdf') } catch (e) { $q.notify({ type: 'negative', message: friendly(e) }) }
+}
 
 onMounted(() => { startedAt = Date.now(); load() })
 onBeforeUnmount(() => { gone = true; stopPolling() })

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 // Whole student journey in a real browser against the local Docker stack (real pipeline: costs a few cents of Claude credit).
 //   docker compose up -d   (project folder)      npm run dev   (web folder)      npx playwright test
 // The confirmation code only goes to the email, so the account is confirmed with the admin command after the wrong-code check.
@@ -87,6 +88,10 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   await items.nth(n - 1).click()
   await expect(page.getByRole('button', { name: 'Next topic' })).toBeDisabled()
   await expect(page.locator('.lk-topic:visible')).toHaveCount(1)
+  await page.getByRole('button', { name: /Export/ }).click()                             // a real PDF made by the server
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByText('Download PDF').click()])
+  expect(download.suggestedFilename()).toMatch(/\.pdf$/)
+  expect(readFileSync(await download.path()).subarray(0, 4).toString()).toBe('%PDF')
   await page.getByRole('tab', { name: /Short notes/ }).click()
   await expect(page.getByText('Short revision notes')).toBeVisible()
 
