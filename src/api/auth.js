@@ -8,3 +8,4 @@ export const login = (email, password) => data(http.post('/auth/login', { email,
 export const googleLogin = (idToken, acceptTerms) => data(http.post('/auth/google', { id_token: idToken, accept_terms: acceptTerms }))
 export const me = () => data(http.get('/auth/me'))
 export const deleteAccount = () => http.delete('/auth/me')
+export const getUsage = () => data(http.get('/auth/usage'))

@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-h5 q-mt-none q-mb-sm" style="font-weight: 400">Check your email</h1>
-    <p class="lk-meta q-mb-md">We sent a 6-digit code to <strong class="text-black">{{ email }}</strong>. It works for 10 minutes.</p>
+    <p class="lk-meta q-mb-md">We sent a 6-digit code to <strong class="lk-strong">{{ email }}</strong>. It works for 10 minutes.</p>
 
     <error-banner :message="error" />
     <error-banner :message="info" info />

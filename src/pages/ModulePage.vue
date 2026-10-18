@@ -19,15 +19,15 @@
             </q-btn>
           </div>
         </q-list>
-        <q-card-section v-else class="text-center q-py-lg">
-          <div class="lk-meta q-mb-md">No sessions yet. Add your first lecture.</div>
-          <q-btn unelevated color="primary" label="New session" :to="{ path: '/new', query: { module: module.id } }" />
-        </q-card-section>
+        <empty-state v-else icon="school" text="No sessions yet. Add your first lecture.">
+          <q-btn unelevated color="primary" icon="add" label="New session" :to="{ path: '/new', query: { module: module.id } }" />
+        </empty-state>
       </q-card>
     </template>
-    <div v-else-if="library.loaded" class="lk-card q-pa-lg text-center" style="max-width: 560px">
-      <div class="q-mb-md">This module was not found.</div>
-      <q-btn unelevated color="primary" label="My courses" to="/courses" />
+    <div v-else-if="library.loaded" class="lk-card" style="max-width: 560px">
+      <empty-state icon="search_off" text="This module was not found.">
+        <q-btn unelevated color="primary" label="My courses" to="/courses" />
+      </empty-state>
     </div>
     <q-inner-loading :showing="library.loading && !library.loaded" />
   </q-page>
@@ -38,6 +38,7 @@ import { computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useLibraryStore } from '../stores/library'
 import SessionRow from '../components/SessionRow.vue'
+import EmptyState from '../components/EmptyState.vue'
 import { askName, confirmDelete } from '../util/dialogs'
 import { friendly } from '../util/errors'
 import { isBusy } from '../util/status'

@@ -1,9 +1,9 @@
 <template>
-  <q-banner v-if="message" rounded class="q-mb-md" :class="info ? 'bg-blue-1 text-primary' : 'bg-red-1 text-negative'" role="alert">
-    <template #avatar><q-icon :name="info ? 'info' : 'error'" /></template>
-    {{ message }}
-    <template v-if="$slots.default" #action><slot /></template>
-  </q-banner>
+  <div v-if="message" class="lk-banner" :class="info ? 'info' : 'error'" role="alert">
+    <q-icon :name="info ? 'info' : 'error'" size="22px" />
+    <div class="col">{{ message }}</div>
+    <slot />
+  </div>
 </template>
 
 <script setup>

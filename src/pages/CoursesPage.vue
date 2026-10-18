@@ -2,16 +2,16 @@
   <q-page class="lk-page">
     <h1 class="lk-title">My courses</h1>
 
-    <div v-if="!library.courses.length && library.loaded" class="lk-card q-pa-lg text-center" style="max-width: 560px">
-      <q-icon name="folder_copy" size="48px" color="grey-5" />
-      <div class="q-mt-sm q-mb-md">No courses yet. Add your first course.</div>
-      <q-btn unelevated color="primary" icon="add" label="Add course" @click="addCourse" />
+    <div v-if="!library.courses.length && library.loaded" class="lk-card" style="max-width: 560px">
+      <empty-state icon="folder_copy" text="No courses yet. Add your first course.">
+        <q-btn unelevated color="primary" icon="add" label="Add course" @click="addCourse" />
+      </empty-state>
     </div>
 
     <template v-else-if="course">
-      <q-tabs :model-value="course.id" align="left" indicator-color="primary" active-color="primary" class="bg-white" style="border-bottom: 1px solid var(--lk-border)" @update:model-value="select">
+      <q-tabs :model-value="course.id" align="left" indicator-color="primary" active-color="primary" class="lk-tabs" @update:model-value="select">
         <q-tab v-for="c in library.courses" :key="c.id" :name="c.id" :label="c.name" />
-        <q-btn flat no-caps icon="add" label="Add course" color="grey-9" class="q-px-md" @click="addCourse" />
+        <q-btn flat no-caps icon="add" label="Add course" class="lk-flat q-px-md" @click="addCourse" />
       </q-tabs>
 
       <div class="row items-center q-mt-md q-mb-md">
@@ -31,13 +31,14 @@
         <q-btn unelevated color="primary" icon="add" label="New session" :to="{ path: '/new', query: { course: course.id } }" />
       </div>
 
-      <div v-if="!course.modules.length" class="lk-card q-pa-lg text-center">
-        <div class="lk-meta q-mb-md">No modules yet. Add a module, for example a topic or a week.</div>
-        <q-btn unelevated color="primary" icon="create_new_folder" label="Add module" @click="addModule" />
+      <div v-if="!course.modules.length" class="lk-card">
+        <empty-state icon="create_new_folder" text="No modules yet. Add a module, for example a topic or a week.">
+          <q-btn unelevated color="primary" icon="create_new_folder" label="Add module" @click="addModule" />
+        </empty-state>
       </div>
 
       <div class="lk-grid3">
-        <q-card v-for="m in course.modules" :key="m.id" flat bordered class="lk-card">
+        <q-card v-for="m in course.modules" :key="m.id" flat bordered class="lk-card lk-hover">
           <q-card-section class="row items-center no-wrap q-pb-sm">
             <q-icon name="folder_special" size="30px" color="primary" class="q-mr-md" />
             <div class="col" style="min-width: 0">
@@ -73,6 +74,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useLibraryStore } from '../stores/library'
 import SessionRow from '../components/SessionRow.vue'
+import EmptyState from '../components/EmptyState.vue'
 import { askName, confirmDelete } from '../util/dialogs'
 import { friendly } from '../util/errors'
 import { formatDate, plural } from '../util/format'

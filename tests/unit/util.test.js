@@ -49,7 +49,7 @@ describe('stages', () => {
 
 describe('status', () => {
   it('maps a session state to a word', () => {
-    expect(statusOf({ state: 'done' }).text).toBe('Ready')
+    expect(statusOf({ state: 'done' }).text).toBe('Completed')
     expect(statusOf({ state: 'queued' }).text).toBe('Processing')
     expect(statusOf({ state: 'processing' }).css).toBe('processing')
     expect(statusOf({ state: 'failed' }).text).toBe('Failed')

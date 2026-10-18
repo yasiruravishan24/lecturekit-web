@@ -1,14 +1,16 @@
 <template>
   <div>
-    <div class="lk-meta q-mb-md">Notes and quizzes from your lectures</div>
     <h1 class="text-h5 q-mt-none q-mb-md" style="font-weight: 400">Log in</h1>
 
     <error-banner v-if="notice" :message="notice" info />
     <error-banner :message="error" />
 
-    <q-form @submit.prevent="submit" class="q-gutter-md" novalidate>
-      <q-input v-model="email" type="email" label="Email" outlined autocomplete="email" />
-      <q-input v-model="password" :type="show ? 'text' : 'password'" label="Password" outlined autocomplete="current-password">
+    <q-form @submit.prevent="submit" class="lk-form" novalidate>
+      <q-input v-model="email" type="email" label="Email" outlined hide-bottom-space autocomplete="email">
+        <template #prepend><q-icon name="mail" /></template>
+      </q-input>
+      <q-input v-model="password" :type="show ? 'text' : 'password'" label="Password" outlined hide-bottom-space autocomplete="current-password">
+        <template #prepend><q-icon name="lock" /></template>
         <template #append>
           <q-btn flat round dense size="sm" :icon="show ? 'visibility' : 'visibility_off'" :aria-label="show ? 'Hide password' : 'Show password'" @click="show = !show" />
         </template>
@@ -16,10 +18,14 @@
       <q-btn type="submit" label="Log in" color="primary" unelevated class="full-width" style="height: 44px" :loading="busy" />
     </q-form>
 
-    <template v-if="googleOn">
-      <div class="row items-center q-my-md"><q-separator class="col" /><span class="q-px-md lk-meta">or</span><q-separator class="col" /></div>
-      <div ref="googleButton" class="row justify-center" style="min-height: 44px" />
-    </template>
+    <div class="row items-center q-my-md"><q-separator class="col" /><span class="q-px-md lk-meta">or</span><q-separator class="col" /></div>
+    <!-- Google's own button when the server has a Google client ID; otherwise the same look, switched off, so it is clear why -->
+    <div v-if="googleOn" ref="googleButton" class="row justify-center" style="min-height: 44px" />
+    <q-btn v-else-if="googleChecked" outline no-caps class="full-width lk-google" style="height: 44px" disable>
+      <svg class="lk-g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+      Continue with Google
+      <q-tooltip anchor="top middle" self="bottom middle">Google sign-in is not set up on this server yet</q-tooltip>
+    </q-btn>
 
     <div class="text-center q-mt-md lk-meta">New here? <router-link to="/register" class="lk-link">Create an account</router-link></div>
 
@@ -27,8 +33,8 @@
       <q-card style="min-width: 320px; max-width: 420px">
         <q-card-section>
           <div class="text-h6">Create your account</div>
-          <p class="q-mt-sm">To create a new account with Google, please accept the terms of use.</p>
-          <q-checkbox v-model="termsOk" label="I accept the terms of use" />
+          <p class="q-mt-sm">To create a new account with Google, please agree to the terms.</p>
+          <q-checkbox v-model="termsOk" dense class="lk-terms"><span>I understand and agree with the <legal-links from="login" />.</span></q-checkbox>
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="primary" v-close-popup @click="pendingToken = ''" />
@@ -46,6 +52,7 @@ import { useAuthStore } from '../stores/auth'
 import { friendly, isCode } from '../util/errors'
 import { loadGoogle } from '../util/google'
 import ErrorBanner from '../components/ErrorBanner.vue'
+import LegalLinks from '../components/LegalLinks.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -57,6 +64,7 @@ const show = ref(false)
 const busy = ref(false)
 const error = ref('')
 const googleOn = ref(false)
+const googleChecked = ref(false)          // the server has told us whether Google sign-in is set up
 const googleButton = ref(null)
 const termsDialog = ref(false)
 const termsOk = ref(false)
@@ -115,6 +123,7 @@ async function finishGoogle(acceptTerms) {
 onMounted(async () => {
   try {
     const config = await auth.loadConfig()
+    googleChecked.value = true
     if (!config.google_enabled) return
     googleOn.value = true
     const google = await loadGoogle()

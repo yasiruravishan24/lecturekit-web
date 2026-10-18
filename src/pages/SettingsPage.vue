@@ -6,9 +6,13 @@
         <div class="lk-label q-mb-md">Account</div>
         <q-input :model-value="auth.user?.full_name" label="Name" outlined readonly class="q-mb-md" />
         <q-input :model-value="auth.user?.email" label="Email" outlined readonly />
+        <div class="lk-label q-mt-lg q-mb-sm">Storage</div>
+        <q-linear-progress :value="usedShare" rounded size="10px" :color="usedShare > 0.9 ? 'negative' : 'primary'" :track-color="$q.dark.isActive ? 'blue-grey-9' : 'blue-1'" />
+        <div class="row justify-between lk-meta q-mt-xs"><span>{{ formatSize(usage.used_bytes) }} used</span><span>{{ limits.max_storage_gb }} GB available</span></div>
         <p class="lk-meta q-mt-md">
-          You can make up to {{ limits.daily_limit }} lectures a day. Recordings are removed from the server after {{ limits.keep_media_days }} days; notes and quizzes stay.
+          You can make up to {{ limits.daily_limit }} lectures a day. Your recordings are kept for replay until you delete the lecture. Delete lectures you no longer need to free space.
         </p>
+        <p class="lk-meta"><router-link :to="{ path: '/terms', query: { from: 'settings' } }" class="lk-link">Terms &amp; Conditions</router-link> · <router-link :to="{ path: '/privacy', query: { from: 'settings' } }" class="lk-link">Privacy Policy</router-link></p>
         <q-btn outline color="primary" icon="logout" label="Log out" class="q-mr-md" @click="logout" />
         <q-btn flat color="negative" icon="delete_forever" label="Delete account" @click="confirmOpen = true" />
       </q-card-section>
@@ -32,18 +36,22 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
 import * as authApi from '../api/auth'
 import ErrorBanner from '../components/ErrorBanner.vue'
 import { friendly } from '../util/errors'
+import { formatSize } from '../util/format'
 
 const router = useRouter()
 const auth = useAuthStore()
 const library = useLibraryStore()
 const limits = computed(() => auth.limits)
+const usage = ref({ used_bytes: 0, limit_bytes: 1 })
+const usedShare = computed(() => Math.min(1, usage.value.used_bytes / Math.max(1, usage.value.limit_bytes)))
+onMounted(() => { authApi.getUsage().then((u) => { usage.value = u }).catch(() => {}) })
 const confirmOpen = ref(false)
 const typed = ref('')
 const busy = ref(false)

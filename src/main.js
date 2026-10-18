@@ -6,6 +6,7 @@ import './css/app.scss'
 import App from './App.vue'
 import { router } from './router'
 import { useAuthStore } from './stores/auth'
+import { applyTheme, useUiStore } from './stores/ui'
 
 // an old address with a # (/#/sessions/12) becomes the normal one (/sessions/12)
 if (location.hash.startsWith('#/')) history.replaceState(null, '', location.hash.slice(1))
@@ -16,6 +17,7 @@ app.use(Quasar, {
   config: { notify: { position: 'top', timeout: 4000 }, brand: { primary: '#1976D2' } },
 })
 app.use(createPinia())
+applyTheme(useUiStore().theme)
 useAuthStore().wire(router)
 app.use(router)
 app.mount('#app')

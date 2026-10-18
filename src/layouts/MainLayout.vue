@@ -9,26 +9,41 @@
         </q-toolbar-title>
         <q-btn round flat no-caps aria-label="Account menu">
           <q-avatar size="32px" font-size="14px" color="white" text-color="primary" style="font-weight: 500">{{ initialsText }}</q-avatar>
-          <q-menu>
-            <q-list style="min-width: 200px">
-              <q-item class="text-grey-8" dense>
-                <q-item-section>
-                  <q-item-label>{{ auth.user?.full_name || 'Account' }}</q-item-label>
-                  <q-item-label caption>{{ auth.user?.email }}</q-item-label>
-                </q-item-section>
+          <q-menu class="lk-account-menu" anchor="bottom right" self="top right" :offset="[0, 8]">
+            <div class="lk-acc-head">
+              <q-avatar size="44px" font-size="17px" color="primary" text-color="white" style="font-weight: 500">{{ initialsText }}</q-avatar>
+              <div class="lk-acc-who">
+                <div class="lk-acc-name">{{ auth.user?.full_name || 'Account' }}</div>
+                <div class="lk-acc-mail">{{ auth.user?.email }}</div>
+              </div>
+            </div>
+            <q-separator />
+            <q-list class="q-py-sm">
+              <q-item clickable v-close-popup to="/settings">
+                <q-item-section avatar><q-icon name="settings" /></q-item-section>
+                <q-item-section>Settings</q-item-section>
               </q-item>
-              <q-separator />
-              <q-item clickable v-close-popup to="/settings"><q-item-section avatar><q-icon name="settings" /></q-item-section><q-item-section>Settings</q-item-section></q-item>
-              <q-item clickable v-close-popup @click="logout"><q-item-section avatar><q-icon name="logout" /></q-item-section><q-item-section>Log out</q-item-section></q-item>
+              <q-item clickable @click="ui.toggleDark()">
+                <q-item-section avatar><q-icon :name="isDark ? 'dark_mode' : 'light_mode'" /></q-item-section>
+                <q-item-section>Dark mode</q-item-section>
+                <q-item-section side><q-toggle :model-value="isDark" dense color="primary" aria-label="Dark mode" @click.stop="ui.toggleDark()" /></q-item-section>
+              </q-item>
+            </q-list>
+            <q-separator />
+            <q-list class="q-py-sm">
+              <q-item clickable v-close-popup class="lk-acc-logout" @click="logout">
+                <q-item-section avatar><q-icon name="logout" /></q-item-section>
+                <q-item-section>Log out</q-item-section>
+              </q-item>
             </q-list>
           </q-menu>
         </q-btn>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="drawer" show-if-above :width="240" bordered class="bg-white lk-drawer">
+    <q-drawer v-model="drawer" show-if-above :width="240" bordered class="lk-drawer">
       <q-scroll-area class="fit">
-        <q-list>
+        <q-list class="lk-nav">
           <q-item v-for="n in nav" :key="n.to" clickable :to="n.to" :exact="n.exact" active-class="lk-nav-active" @click="closeIfSmall">
             <q-item-section avatar><q-icon :name="n.icon" /></q-item-section>
             <q-item-section>{{ n.label }}</q-item-section>
@@ -49,7 +64,11 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view v-slot="{ Component, route: current }">
+        <transition name="lk-fade" mode="out-in">
+          <component :is="Component" :key="current.path" />
+        </transition>
+      </router-view>
     </q-page-container>
   </q-layout>
 </template>
@@ -60,6 +79,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
+import { useUiStore } from '../stores/ui'
 import { initials } from '../util/format'
 import { friendly } from '../util/errors'
 
@@ -68,6 +88,8 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const library = useLibraryStore()
+const ui = useUiStore()
+const isDark = computed(() => $q.dark.isActive)
 const drawer = ref(false)
 
 const nav = [

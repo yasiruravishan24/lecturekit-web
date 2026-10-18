@@ -6,7 +6,7 @@
 
     <template v-if="questions.length">
       <div class="row items-center q-mb-sm" style="max-width: 1000px">
-        <div class="col lk-meta">Quiz for <strong class="text-black">{{ title }}</strong></div>
+        <div class="col lk-meta">Quiz for <strong class="lk-strong">{{ title }}</strong></div>
         <span class="lk-chip info">Question {{ index + 1 }} of {{ questions.length }}</span>
       </div>
       <q-linear-progress :value="(index + 1) / questions.length" rounded size="6px" class="q-mb-md" style="max-width: 1000px" />
@@ -21,9 +21,9 @@
         </q-card-section>
         <q-separator />
         <q-card-actions class="q-px-md q-py-sm">
-          <q-icon name="info" color="grey-6" class="q-mr-sm" />
+          <q-icon name="info" class="lk-dim q-mr-sm" />
           <span class="lk-meta col">Answers are shown when you submit the whole quiz. {{ unanswered ? `${plural(unanswered, 'question')} not answered yet.` : '' }}</span>
-          <q-btn flat color="grey-9" label="Previous" :disable="index === 0" @click="index--" />
+          <q-btn flat class="lk-flat" label="Previous" :disable="index === 0" @click="index--" />
           <q-btn v-if="index < questions.length - 1" unelevated color="primary" label="Next" @click="index++" />
           <q-btn v-else unelevated color="primary" label="Submit quiz" :loading="busy" @click="submit" />
         </q-card-actions>

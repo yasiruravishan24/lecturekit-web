@@ -4,6 +4,8 @@
       <q-tab name="full" icon="description" label="Full notes" />
       <q-tab name="short" icon="short_text" label="Short notes" />
       <q-tab name="quiz" icon="quiz" :label="`Quiz${quizCount != null ? ` (${quizCount})` : ''}`" />
+      <q-tab name="moments" icon="photo_library" :label="`Key moments${shots.length ? ` (${shots.length})` : ''}`" />
+      <q-tab name="recording" icon="play_circle" label="Recording" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated class="lk-print-all">
@@ -13,7 +15,7 @@
             <q-card flat bordered class="lk-card q-mb-md">
               <q-card-section class="q-pb-none lk-label">Topics</q-card-section>
               <q-list>
-                <q-item v-for="(t, i) in notes.full_notes" :key="i" clickable :active="active === i" active-class="bg-blue-1 text-primary" @click="goTo(i)">
+                <q-item v-for="(t, i) in notes.full_notes" :key="i" clickable :active="active === i" active-class="lk-active" @click="goTo(i)">
                   <q-item-section>{{ t.heading }}</q-item-section>
                 </q-item>
               </q-list>
@@ -62,22 +64,50 @@
           </q-list>
         </div>
       </q-tab-panel>
+
+      <q-tab-panel name="moments" class="lk-no-print">
+        <shots-gallery :shots="shots" :busy="visualsBusy" :can-play="!!(replay && replay.state === 'ready')" :empty-title="momentsEmpty.title" :empty-text="momentsEmpty.text" @play="playFrom" />
+      </q-tab-panel>
+
+      <q-tab-panel name="recording" class="lk-no-print">
+        <replay-player ref="player" :replay="replay" :can-make="canMakeReplay" :starting="startingReplay" @make="$emit('make-replay')" />
+      </q-tab-panel>
     </q-tab-panels>
   </q-card>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { formatDate, plural } from '../util/format'
+import ReplayPlayer from './ReplayPlayer.vue'
+import ShotsGallery from './ShotsGallery.vue'
 
-defineProps({
+const props = defineProps({
   notes: { type: Object, required: true },
   sessionId: { type: [Number, String], required: true },
   slideCount: { type: Number, default: 0 },
   quizCount: { type: Number, default: null },
   attempts: { type: Array, default: () => [] },
+  shots: { type: Array, default: () => [] },
+  replay: { type: Object, default: null },
+  visualsBusy: Boolean,
+  canMakeReplay: Boolean,
+  startingReplay: Boolean,
 })
+defineEmits(['make-replay'])
 const tab = ref('full')
+const player = ref(null)
+
+// "Play from 12:30": open the recording tab and jump there
+async function playFrom(seconds) {
+  tab.value = 'recording'
+  await nextTick()
+  setTimeout(() => player.value && player.value.seek(seconds), 400)
+}
+
+const momentsEmpty = computed(() => (props.replay && props.replay.kind === 'audio'
+  ? { title: 'This recording has no picture', text: 'Pictures of the board and screen come from video recordings.' }
+  : { title: 'No board or screen content found', text: 'Pictures appear here when the recording shows a board, a slide or a screen.' }))
 const active = ref(0)
 
 function goTo(i) {

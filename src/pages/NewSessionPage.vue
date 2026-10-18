@@ -58,7 +58,7 @@
             </q-list>
             <q-separator class="q-my-md" />
             <div class="lk-meta">
-              <template v-if="target">Saved under <strong class="text-black">{{ target }}</strong>. </template>
+              <template v-if="target">Saved under <strong class="lk-strong">{{ target }}</strong>. </template>
               With slides the notes also use the slide text. A lecture saved in several files? Add them all; they are joined in order.
             </div>
           </q-card-section>

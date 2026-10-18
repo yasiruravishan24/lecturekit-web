@@ -17,7 +17,7 @@
         </q-item>
       </q-list>
       <q-card-section v-else-if="library.loaded" class="text-center q-py-lg">
-        <div class="lk-meta q-mb-md">No quizzes yet. A quiz appears when a lecture is ready.</div>
+        <div class="lk-meta q-mb-md">No quizzes yet. A quiz appears when a lecture is completed.</div>
         <q-btn unelevated color="primary" label="New session" to="/new" />
       </q-card-section>
     </q-card>

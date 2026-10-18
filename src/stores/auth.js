@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     loggedIn: (s) => !!s.token && (!s.expiresAt || new Date(s.expiresAt) > new Date()),
-    limits: (s) => (s.config && s.config.limits) || { daily_limit: 5, keep_media_days: 7, max_recording_mb: 1500, max_slides_mb: 100, max_recording_parts: 10 },
+    limits: (s) => (s.config && s.config.limits) || { daily_limit: 5, keep_media_days: 7, max_recording_mb: 1500, max_slides_mb: 100, max_recording_parts: 10, max_storage_gb: 10 },
   },
   actions: {
     wire(router) {

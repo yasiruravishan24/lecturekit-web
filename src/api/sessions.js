@@ -20,3 +20,8 @@ export const getNotes = (id) => data(http.get(`/sessions/${id}/notes`))
 export const exportMarkdown = (id) => http.get(`/sessions/${id}/export.md`, { responseType: 'blob' }).then((r) => r.data)
 export const liveStatus = (id) => data(http.get(`/sessions/${id}/live`))
 export const finishLive = (id, total) => data(http.post(`/sessions/${id}/live/finish`, null, { params: { total } }))
+
+// the replay (video or audio, faces blurred) and the pictures of the board and screen, made in the background after the notes
+export const getReplay = (id) => data(http.get(`/sessions/${id}/replay`))
+export const makeReplay = (id) => data(http.post(`/sessions/${id}/replay`))
+export const listShots = (id) => data(http.get(`/sessions/${id}/shots`))

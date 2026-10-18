@@ -8,9 +8,17 @@ const guestRoute = (name, page) => ({
   children: [{ path: '', name, component: page }],
 })
 
+const legalRoute = (name, page) => ({
+  path: `/${name}`,
+  component: () => import('../layouts/LegalLayout.vue'),
+  children: [{ path: '', name, component: page }],
+})
+
 // normal addresses (/sessions/12): the server answers any address that is not a file or /api with index.html
 export const routes = [
   // each sign-in page is its own route inside the centered layout (a shared parent at "/" would also match "/" itself)
+  legalRoute('terms', () => import('../pages/TermsPage.vue')),          // public: readable whether or not you are logged in
+  legalRoute('privacy', () => import('../pages/PrivacyPage.vue')),
   guestRoute('login', () => import('../pages/LoginPage.vue')),
   guestRoute('register', () => import('../pages/RegisterPage.vue')),
   guestRoute('verify', () => import('../pages/VerifyPage.vue')),

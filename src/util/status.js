@@ -1,7 +1,7 @@
 // Session state (server) -> the chip the person sees.
 export function statusOf(session) {
   switch (session.state) {
-    case 'done': return { text: 'Ready', css: 'ready' }
+    case 'done': return { text: 'Completed', css: 'completed' }
     case 'queued':
     case 'processing': return { text: 'Processing', css: 'processing' }
     case 'failed': return { text: 'Failed', css: 'failed' }

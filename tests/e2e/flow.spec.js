@@ -18,10 +18,12 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
 
   // sign up
   await page.goto('/register')
+  await expect(page.locator('.lk-strength')).toHaveCount(0)               // the strength hint waits until something is typed
   await page.getByLabel('Full name').fill('E2E Student')
   await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password (at least 8 characters)').fill(password)
-  await page.getByRole('checkbox', { name: 'I accept the terms of use' }).check()
+  await page.getByLabel('Password', { exact: true }).fill(password)
+  await expect(page.locator('.lk-strength')).toBeVisible()
+  await page.getByRole('checkbox', { name: /I understand and agree/ }).check()
   await page.getByRole('button', { name: 'Create account' }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible()
   await shot('03-confirm-email')

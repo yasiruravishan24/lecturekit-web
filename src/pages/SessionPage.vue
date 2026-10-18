@@ -1,26 +1,27 @@
 <template>
   <q-page class="lk-page">
     <template v-if="session">
-      <div class="lk-meta lk-no-print">
-        <router-link v-if="where" :to="{ path: '/courses', query: { course: where.course.id } }" class="lk-link" style="font-weight: 400">{{ where.course.name }}</router-link>
-        <template v-if="where"> › <router-link :to="`/modules/${where.id}`" class="lk-link" style="font-weight: 400">{{ where.name }}</router-link></template>
-      </div>
+      <nav v-if="where" class="lk-crumbs lk-no-print" aria-label="Breadcrumb">
+        <router-link :to="{ path: '/courses', query: { course: where.course.id } }">{{ where.course.name }}</router-link>
+        <q-icon name="chevron_right" size="18px" />
+        <router-link :to="`/modules/${where.id}`">{{ where.name }}</router-link>
+      </nav>
 
-      <div class="row items-center q-mb-md q-mt-xs">
-        <div class="col row items-center q-gutter-sm">
-          <h1 class="lk-title q-mb-none q-ml-sm">{{ session.title }}</h1>
+      <div class="lk-head-row">
+        <div class="lk-title-row">
+          <h1 class="lk-title q-mb-none">{{ session.title }}</h1>
           <status-chip :session="session" />
           <span v-if="meta" class="lk-chip info">{{ meta }}</span>
         </div>
-        <div class="lk-no-print">
+        <div class="lk-no-print lk-head-actions">
           <template v-if="session.state === 'done'">
-            <q-btn flat color="grey-9" icon="download" label="Export">
+            <q-btn outline color="primary" icon="download" label="Export" icon-right="arrow_drop_down" class="q-mr-sm">
               <q-menu><q-list style="min-width: 220px">
                 <q-item clickable v-close-popup @click="downloadMarkdown"><q-item-section avatar><q-icon name="download" /></q-item-section><q-item-section>Download Markdown</q-item-section></q-item>
                 <q-item clickable v-close-popup @click="printNotes"><q-item-section avatar><q-icon name="print" /></q-item-section><q-item-section>Print / save as PDF</q-item-section></q-item>
               </q-list></q-menu>
             </q-btn>
-            <q-btn flat color="primary" icon="quiz" label="Take quiz" :to="`/quiz/${session.id}`" />
+            <q-btn unelevated color="primary" icon="quiz" label="Take quiz" :to="`/quiz/${session.id}`" class="q-mr-xs" />
           </template>
           <q-btn flat round dense icon="more_vert" aria-label="Lecture menu">
             <q-menu><q-list style="min-width: 160px">
@@ -74,14 +75,15 @@
       </q-card>
 
       <!-- done -->
-      <notes-view v-else-if="notes" :notes="notes" :session-id="session.id" :slide-count="slideCount" :quiz-count="quizCount" :attempts="attempts" />
+      <notes-view v-else-if="notes" :notes="notes" :session-id="session.id" :slide-count="slideCount" :quiz-count="quizCount" :attempts="attempts"
+                  :shots="shots" :replay="replay" :visuals-busy="visualsBusy" :can-make-replay="canMakeReplay" :starting-replay="startingReplay" @make-replay="startReplay" />
       <q-inner-loading :showing="loadingNotes" />
     </template>
 
-    <div v-else-if="notFound" class="lk-card q-pa-lg text-center" style="max-width: 560px">
-      <q-icon name="search_off" size="48px" color="grey-5" />
-      <div class="q-mt-sm q-mb-md">This lecture was not found.</div>
-      <q-btn unelevated color="primary" label="My courses" to="/courses" />
+    <div v-else-if="notFound" class="lk-card" style="max-width: 560px">
+      <empty-state icon="search_off" text="This lecture was not found.">
+        <q-btn unelevated color="primary" label="My courses" to="/courses" />
+      </empty-state>
     </div>
     <q-inner-loading :showing="!session && !notFound" />
   </q-page>
@@ -99,6 +101,7 @@ import StatusChip from '../components/StatusChip.vue'
 import ProgressPanel from '../components/ProgressPanel.vue'
 import NotesView from '../components/NotesView.vue'
 import ErrorBanner from '../components/ErrorBanner.vue'
+import EmptyState from '../components/EmptyState.vue'
 import { askName, confirmDelete } from '../util/dialogs'
 import { friendly } from '../util/errors'
 import { plural } from '../util/format'
@@ -120,13 +123,19 @@ const loadingNotes = ref(false)
 const error = ref('')
 const liveText = ref('')
 const liveTotal = ref(0)
+const replay = ref(null)                // the replay and the state of the extra background work
+const shots = ref([])
+const startingReplay = ref(false)
 
+const bgBusy = (r) => !!r && (['queued', 'processing'].includes(r.state) || ['queued', 'processing'].includes(r.visuals_state))
+const visualsBusy = computed(() => !!replay.value && ['queued', 'processing'].includes(replay.value.visuals_state))
+const canMakeReplay = computed(() => !!session.value && session.value.files.some((f) => f.kind === 'recording' && !f.removed))
 const where = computed(() => (session.value ? library.module(session.value.module_id) : null))
 const slideCount = computed(() => (session.value ? session.value.files.filter((f) => f.kind === 'slides').length : 0))
 const meta = computed(() => {
   if (!session.value || session.value.state !== 'done') return ''
   const kind = kindOf(session.value).word
-  return [kind ? kind[0].toUpperCase() + kind.slice(1) : '', session.value.has_slides ? 'slides' : ''].filter(Boolean).join(' · ')
+  return [kind ? kind[0].toUpperCase() + kind.slice(1) : '', session.value.has_slides ? 'slides' : '', session.value.shot_count ? 'board' : ''].filter(Boolean).join(' · ')
 })
 const fileSummary = computed(() => {
   const n = session.value.files.filter((f) => f.kind === 'recording').length
@@ -138,7 +147,7 @@ let timer = null
 let startedAt = 0
 let gone = false
 
-const stopPolling = () => { clearTimeout(timer); timer = null }
+const stopPolling = () => { clearTimeout(timer); timer = null; clearTimeout(extrasTimer) }
 
 async function load() {
   error.value = ''
@@ -163,6 +172,7 @@ async function loadResults() {
     notes.value = await sessionsApi.getNotes(props.id)
     quizApi.getQuiz(props.id).then((q) => { quizCount.value = q.questions.length }).catch(() => {})
     quizApi.listAttempts(props.id).then((a) => { attempts.value = a }).catch(() => {})
+    refreshExtras()
   } catch (e) {
     error.value = friendly(e)
   } finally {
@@ -180,6 +190,34 @@ async function loadLive() {
       : 'No part of the recording reached the server.'
   } catch (e) {
     liveText.value = friendly(e)
+  }
+}
+
+// the replay and the board pictures are made after the notes: look at them now and then until they are finished
+let extrasTimer = null
+async function refreshExtras() {
+  clearTimeout(extrasTimer)
+  try {
+    const before = replay.value ? replay.value.visuals_state : null
+    replay.value = await sessionsApi.getReplay(props.id)
+    shots.value = await sessionsApi.listShots(props.id)
+    if (before && ['queued', 'processing'].includes(before) && replay.value.visuals_state === 'done') {
+      notes.value = await sessionsApi.getNotes(props.id)                  // the notes now include what was on the board
+      $q.notify({ type: 'positive', message: 'The notes now include the board and screen content.' })
+    }
+  } catch { /* the extras are optional: the notes stay usable */ }
+  if (!gone && bgBusy(replay.value)) extrasTimer = setTimeout(refreshExtras, 4000)
+}
+
+async function startReplay() {
+  startingReplay.value = true
+  try {
+    await sessionsApi.makeReplay(props.id)
+    await refreshExtras()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: friendly(e) })
+  } finally {
+    startingReplay.value = false
   }
 }
 
@@ -257,5 +295,5 @@ const printNotes = () => window.print()
 
 onMounted(() => { startedAt = Date.now(); load() })
 onBeforeUnmount(() => { gone = true; stopPolling() })
-watch(() => props.id, () => { session.value = null; job.value = null; notes.value = null; quizCount.value = null; attempts.value = []; notFound.value = false; stopPolling(); startedAt = Date.now(); load() })
+watch(() => props.id, () => { session.value = null; job.value = null; notes.value = null; replay.value = null; shots.value = []; quizCount.value = null; attempts.value = []; notFound.value = false; stopPolling(); startedAt = Date.now(); load() })
 </script>

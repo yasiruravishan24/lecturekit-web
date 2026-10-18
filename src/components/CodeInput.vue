@@ -66,7 +66,7 @@ defineExpose({ focus: () => boxes.value[0]?.focus() })
 <style scoped>
 .lk-code-box {
   width: 56px; height: 64px; text-align: center; font-size: 28px; font-family: Roboto, sans-serif;
-  border: 1px solid #bdbdbd; border-radius: 4px; background: #fff; color: #212121; outline: none;
+  border: 1px solid var(--lk-border); border-radius: 10px; background: var(--lk-surface); color: var(--lk-text); outline: none;
 }
 .lk-code-box:focus { border: 2px solid var(--lk-primary); }
 @media (max-width: 420px) { .lk-code-box { width: 44px; height: 54px; font-size: 22px; } }
