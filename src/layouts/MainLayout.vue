@@ -50,16 +50,31 @@
           </q-item>
         </q-list>
         <q-separator class="q-my-sm" />
-        <div class="lk-label q-px-md q-py-sm">Courses</div>
+        <div class="lk-side-head">
+          <span class="lk-label">Courses<template v-if="library.courses.length"> · {{ library.courses.length }}</template></span>
+          <q-btn flat round dense size="sm" icon="add" to="/courses" aria-label="Add a course"><q-tooltip>Add a course</q-tooltip></q-btn>
+        </div>
         <div v-if="!library.courses.length && library.loaded" class="q-px-md q-pb-md lk-meta">No courses yet. Add your first course.</div>
-        <q-list>
-          <q-expansion-item v-for="c in library.courses" :key="c.id" :label="c.name" icon="folder" expand-separator :default-opened="isCourseOpen(c)">
-            <q-item v-for="m in c.modules" :key="m.id" clickable :to="`/modules/${m.id}`" class="lk-sub" active-class="lk-nav-active" @click="closeIfSmall">
-              <q-item-section>{{ m.name }}</q-item-section>
-            </q-item>
-            <div v-if="!c.modules.length" class="lk-sub q-py-xs lk-meta">No modules yet</div>
-          </q-expansion-item>
-        </q-list>
+        <ul class="lk-tree">
+          <li v-for="c in library.courses" :key="c.id" class="lk-tree-course">
+            <button type="button" class="lk-tree-row" :aria-expanded="isOpen(c)" @click="toggle(c)">
+              <span class="lk-tree-icon"><q-icon :name="isOpen(c) ? 'folder_open' : 'folder'" size="20px" /></span>
+              <span class="lk-tree-name">{{ c.name }}</span>
+              <span class="lk-tree-count">{{ c.modules.length }}</span>
+              <q-icon name="expand_more" size="20px" class="lk-tree-chev" :class="{ open: isOpen(c) }" />
+            </button>
+            <ul v-show="isOpen(c)" class="lk-tree-kids">
+              <li v-for="m in c.modules" :key="m.id">
+                <router-link :to="`/modules/${m.id}`" class="lk-tree-mod" active-class="on" @click="closeIfSmall">
+                  <span class="lk-tree-dot" /><span class="lk-tree-name">{{ m.name }}</span>
+                </router-link>
+              </li>
+              <li v-if="!c.modules.length">
+                <router-link :to="{ path: '/courses', query: { course: c.id } }" class="lk-tree-add" @click="closeIfSmall"><q-icon name="add" size="16px" /> Add a module</router-link>
+              </li>
+            </ul>
+          </li>
+        </ul>
       </q-scroll-area>
     </q-drawer>
 
@@ -102,7 +117,10 @@ const nav = [
 
 const initialsText = computed(() => initials(auth.user?.full_name, auth.user?.email))
 const closeIfSmall = () => { if ($q.screen.lt.md) drawer.value = false }
-const isCourseOpen = (c) => c.modules.some((m) => String(m.id) === String(route.params.id))
+const opened = ref({})                                   // what the person opened or closed by hand
+const hasCurrent = (c) => route.path.startsWith('/modules/') && c.modules.some((m) => String(m.id) === String(route.params.id))
+const isOpen = (c) => (c.id in opened.value ? opened.value[c.id] : hasCurrent(c))
+const toggle = (c) => { opened.value = { ...opened.value, [c.id]: !isOpen(c) } }
 
 function logout() {
   auth.logout()
