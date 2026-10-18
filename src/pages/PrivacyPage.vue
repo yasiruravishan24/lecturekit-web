@@ -26,7 +26,7 @@
 
     <legal-section id="keep" :n="4" title="How long we keep it">
       <ul>
-        <li>Recordings: once your notes are ready, the server makes a replay copy with faces blurred and then deletes the original upload. The replay and the screenshots stay until you delete the lecture or your account. Each account can keep up to {{ gb }} GB.</li>
+        <li>Recordings: once your notes are ready, the server makes a replay copy with other people's faces blurred (the presenter's face, the person seen most in the video, stays clear) and then deletes the original upload. The replay and the screenshots stay until you delete the lecture or your account. Each account can keep up to {{ gb }} GB.</li>
         <li>Transcript, notes, quizzes and attempts: until you delete the lecture or your account.</li>
         <li>Delete a lecture, or your whole account (Settings), and its files and records are deleted straight away. Backups made by the operator can keep a copy until they are rotated out.</li>
       </ul>
@@ -41,7 +41,7 @@
     </legal-section>
 
     <legal-section id="others-recorded" :n="7" title="Recording other people">
-      <p>A lecture recording can include your lecturer and classmates. Faces are blurred automatically in the replay, in screenshots and before any picture is sent to the AI service. The detector is good but not perfect: a small, turned or covered face can be missed. You are responsible for having the right to record and upload it, and for following your institution's rules. See the <router-link :to="{ path: '/terms', query: route.query }" class="lk-link">Terms &amp; Conditions</router-link>.</p>
+      <p>A lecture recording can include your lecturer and classmates. Faces are blurred automatically in screenshots and in the replay (where the presenter is left clear and everyone else is blurred) and before any picture is sent to the AI service. The detector is good but not perfect: a small, turned or covered face can be missed. You are responsible for having the right to record and upload it, and for following your institution's rules. See the <router-link :to="{ path: '/terms', query: route.query }" class="lk-link">Terms &amp; Conditions</router-link>.</p>
     </legal-section>
 
     <legal-section id="rights" :n="8" title="Your choices and rights">

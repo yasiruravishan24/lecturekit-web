@@ -1,10 +1,10 @@
 <template>
-  <q-page class="lk-page">
+  <q-page class="lk-page lk-fit">
     <h1 class="lk-title">New session</h1>
 
-    <div class="row q-col-gutter-lg">
-      <div class="col-12 col-lg-8">
-        <q-card flat bordered class="lk-card">
+    <div class="lk-new-grid">
+      <div class="lk-new-main">
+        <q-card flat bordered class="lk-card lk-new-card">
           <q-card-section>
             <div class="lk-section-title q-mb-md">1. Course and module</div>
             <div v-if="loaded && !library.courses.length" class="q-mb-md">
@@ -27,7 +27,7 @@
             </div>
           </q-card-section>
           <q-separator />
-          <q-card-section>
+          <q-card-section class="lk-new-rec">
             <div class="lk-section-title q-mb-md">2. Lecture recording <span class="text-negative">*</span> <span class="lk-meta">(required)</span></div>
             <upload-box v-model="recordings" multiple :extensions="RECORDING_TYPES" :hint="recordingHint" :disabled="busy" :progress="uploadPercent" @rejected="reject" />
           </q-card-section>
@@ -47,7 +47,7 @@
         </q-card>
       </div>
 
-      <div class="col-12 col-lg-4">
+      <div class="lk-new-side">
         <q-card flat bordered class="lk-card">
           <q-card-section>
             <div class="lk-section-title q-mb-md">What you will get</div>
@@ -155,3 +155,18 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.lk-new-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+@media (max-width: 1023px) { .lk-new-grid { grid-template-columns: 1fr; } }
+.lk-new-rec :deep(.lk-drop) { min-height: 170px; }
+/* a tall enough desktop window: the form fills it, the recording box takes the spare height and the buttons stay at the bottom */
+@media (min-width: 1024px) and (min-height: 780px) {
+  .lk-new-grid { height: 100%; min-height: 0; align-items: stretch; }
+  .lk-new-main { min-height: 0; }
+  .lk-new-card { height: 100%; display: flex; flex-direction: column; overflow-y: auto; }
+  .lk-new-card > * { flex: none; }
+  .lk-new-card > .lk-new-rec { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 240px; }
+  .lk-new-rec :deep(.lk-drop) { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+}
+</style>

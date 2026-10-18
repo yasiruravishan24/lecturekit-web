@@ -111,8 +111,8 @@
         <shots-gallery :shots="shots" :busy="visualsBusy" :can-play="!!(replay && replay.state === 'ready')" :empty-title="momentsEmpty.title" :empty-text="momentsEmpty.text" @play="playFrom" />
       </q-tab-panel>
 
-      <q-tab-panel name="recording" class="lk-no-print">
-        <replay-player ref="player" :replay="replay" :can-make="canMakeReplay" :starting="startingReplay" @make="$emit('make-replay')" />
+      <q-tab-panel name="recording" class="lk-no-print lk-mom-panel">
+        <replay-player ref="player" :replay="replay" :shots="shots" :can-make="canMakeReplay" :starting="startingReplay" @make="$emit('make-replay')" />
       </q-tab-panel>
     </q-tab-panels>
   </q-card>
