@@ -20,7 +20,7 @@ test('board pictures, refined notes, screenshots and a replay you can seek in', 
   await expect(page.locator('.lk-shot').first()).toContainText('Newton')
   await page.waitForTimeout(700)                                                              // let the tab finish sliding in
   await page.screenshot({ path: 'test-results/shots/v1-moments.png', fullPage: true })
-  await page.locator('.lk-shot').first().click()
+  await page.locator('.lk-shot').first().click()                                              // shows the picture and what it says
   await expect(page.locator('.lk-shot-pre')).toContainText('F = 12 N')
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'test-results/shots/v2-moment-dialog.png' })

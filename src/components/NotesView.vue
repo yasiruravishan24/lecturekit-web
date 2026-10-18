@@ -107,7 +107,7 @@
         </div>
       </q-tab-panel>
 
-      <q-tab-panel name="moments" class="lk-no-print">
+      <q-tab-panel name="moments" class="lk-no-print lk-mom-panel">
         <shots-gallery :shots="shots" :busy="visualsBusy" :can-play="!!(replay && replay.state === 'ready')" :empty-title="momentsEmpty.title" :empty-text="momentsEmpty.text" @play="playFrom" />
       </q-tab-panel>
 
@@ -170,6 +170,8 @@ function goTo(i) {
 </script>
 
 <style scoped>
+.lk-mom-panel { height: 100%; }
+@media (min-width: 1024px) { .lk-mom-panel { overflow: hidden; } }
 .lk-short-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 10px; }
 .lk-short-title { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
 .lk-short-count { font-size: 14px; font-weight: 500; color: var(--lk-primary); }
