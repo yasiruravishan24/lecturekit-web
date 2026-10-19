@@ -1,10 +1,10 @@
 <template>
   <div class="lk-deeper">
     <!-- not made yet, or it failed -->
-    <div v-if="!deeper || deeper.state === 'none' || deeper.state === 'failed'" class="lk-deeper-intro">
+    <div v-if="((!deeper || deeper.state === 'none') && !auto) || (deeper && deeper.state === 'failed')" class="lk-deeper-intro">
       <span class="lk-deeper-icon"><q-icon name="travel_explore" size="34px" /></span>
       <h2>{{ DEEPER_NAME }}</h2>
-      <p class="lk-meta">A lecturer cannot say everything. For new lectures this is made by itself after the notes. For this one you can make it now: Claude reads your notes again, searches the web, and adds what may be missing, topic by topic:</p>
+      <p class="lk-meta">A lecturer cannot say everything. Claude reads your notes again, searches the web, and adds what may be missing, topic by topic:</p>
       <ul class="lk-deeper-points">
         <li><q-icon name="school" size="20px" /> <span><b>Background</b> the lecture took for granted</span></li>
         <li><q-icon name="lightbulb" size="20px" /> <span><b>A worked example</b> and <b>common mistakes</b></span></li>
@@ -18,16 +18,16 @@
     </div>
 
     <!-- being made -->
-    <div v-else-if="deeper.state === 'queued' || deeper.state === 'processing'" class="lk-deeper-intro">
+    <div v-else-if="!deeper || deeper.state === 'none' || deeper.state === 'queued' || deeper.state === 'processing'" class="lk-deeper-intro">
       <span class="lk-deeper-icon"><q-spinner color="primary" size="34px" /></span>
       <h2>Reading around your topics</h2>
       <p class="lk-meta">{{ stageText }}</p>
-      <q-linear-progress rounded size="8px" :value="(deeper.percent || 0) / 100" :indeterminate="deeper.state === 'queued'" style="max-width: 360px; margin: 0 auto" />
+      <q-linear-progress rounded size="8px" :value="((deeper && deeper.percent) || 0) / 100" :indeterminate="!deeper || deeper.state !== 'processing'" style="max-width: 360px; margin: 0 auto" />
       <div class="lk-meta">You can leave this page. You will be told when it is ready.</div>
     </div>
 
     <!-- ready -->
-    <div v-else-if="deeper.data" class="lk-deeperwrap">
+    <div v-else-if="deeper && deeper.data" class="lk-deeperwrap">
       <aside class="lk-left">
         <q-card flat bordered class="lk-card">
           <q-card-section class="q-pb-md lk-label">Topics</q-card-section>
@@ -48,7 +48,7 @@
       <div class="lk-right">
         <div class="lk-topic-scroll">
           <template v-if="sel === 0">
-            <h2 class="lk-topic-title">{{ GAPS_TITLE }} <q-icon name="info_outline" size="18px" class="lk-info"><q-tooltip max-width="320px">{{ aiNote }}</q-tooltip></q-icon></h2>
+            <h2 class="lk-topic-title">{{ GAPS_TITLE }}</h2>
             <article v-for="(x, i) in gaps" :key="i" class="lk-gap">
               <h3>{{ x.title }}</h3>
               <p v-if="x.explanation">{{ x.explanation }}</p>
@@ -57,7 +57,7 @@
           </template>
 
           <template v-else-if="cur">
-            <h2 class="lk-topic-title">{{ heading(cur.index) }} <q-icon name="info_outline" size="18px" class="lk-info"><q-tooltip max-width="320px">{{ aiNote }}</q-tooltip></q-icon></h2>
+            <h2 class="lk-topic-title">{{ heading(cur.index) }}</h2>
             <div v-if="cur.background" class="lk-summary"><div class="lk-label text-primary">Background</div><p>{{ cur.background }}</p></div>
             <div v-if="cur.example" class="lk-deeper-block"><div class="lk-label text-primary q-mb-xs">Worked example</div><rich-text :text="cur.example" /></div>
             <div v-if="cur.mistakes.length" class="lk-deeper-block">
@@ -95,7 +95,7 @@ import RichText from './RichText.vue'
 import { DEEPER_NAME, GAPS_NAME, GAPS_TITLE } from '../util/names'
 
 defineEmits(['start'])
-const props = defineProps({ deeper: { type: Object, default: null }, notes: { type: Object, required: true }, starting: Boolean })
+const props = defineProps({ deeper: { type: Object, default: null }, notes: { type: Object, required: true }, starting: Boolean, auto: Boolean })
 const sel = ref(1)
 
 const topics = computed(() => (props.deeper && props.deeper.data ? props.deeper.data.topics : []))
@@ -106,11 +106,11 @@ const count = computed(() => order.value.length)
 const go = (d) => { sel.value = order.value[Math.min(count.value - 1, Math.max(0, pos.value + d))] }
 watch(topics, (t) => { if (t.length && !t.some((x) => x.index === sel.value) && sel.value !== 0) sel.value = t[0].index }, { immediate: true })
 
-const aiNote = 'Written by Claude' + ' with pages found on the web. The lecture notes stay as they are. Check important facts before you rely on them.'
 const gaps = computed(() => ((props.deeper && props.deeper.data && props.deeper.data.not_covered) || []).map((x) => (typeof x === 'string' ? { title: x, explanation: '', why: '' } : x)))
-const heading = (i) => (props.notes.full_notes[i - 1] || {}).heading || `Topic ${i}`
+const heading = (i) => ((topics.value.find((t) => t.index === i) || {}).heading) || (props.notes.full_notes[i - 1] || {}).heading || `Topic ${i}`
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return '' } }
 const stageText = computed(() => {
+  if (!props.deeper || props.deeper.state === 'none') return 'Getting started'
   const s = props.deeper && props.deeper.stage
   if (s === 'questions') return 'Writing and checking a few extra questions'
   if (s === 'save') return 'Almost done'
@@ -133,7 +133,6 @@ const stageText = computed(() => {
 .lk-topic-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 24px 16px 0; scrollbar-width: thin; }
 .lk-topic-title { font-size: 20px; font-weight: 500; margin: 0 0 14px; letter-spacing: -0.01em; }
 .lk-topic-no { min-width: 0; padding-right: 12px; color: var(--lk-text-2); font-variant-numeric: tabular-nums; }
-.lk-info { color: var(--lk-text-2); vertical-align: middle; cursor: help; }
 .lk-gap { border: 1px solid var(--lk-border); background: var(--lk-surface); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
 .lk-gap h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
 .lk-gap p { margin: 0 0 8px; line-height: 1.65; }

@@ -43,7 +43,7 @@ test('board pictures, refined notes, screenshots and a replay you can seek in', 
   await expect(page.getByText(/Question 1 of 1[1-6]/)).toBeVisible()
   await expect(page.getByText('From the board')).toHaveCount(0)                              // the first questions are the old ones
   for (let i = 0; i < 10; i++) await page.getByRole('button', { name: 'Next' }).click()
-  await expect(page.getByText('From the board')).toBeVisible()                               // the new ones come last
+  await expect(page.getByText(/From the board|Beyond the lecture/).first()).toBeVisible()           // the new ones come last (about the board, or learn more)
   await page.screenshot({ path: 'test-results/shots/v4-board-question.png' })
 
   await page.goto(`/sessions/${session.id}`)

@@ -85,7 +85,7 @@
 
       <!-- done -->
       <notes-view v-else-if="notes" :notes="notes" :session-id="session.id" :slide-count="slideCount" :quiz-count="quizCount" :attempts="attempts"
-                  :shots="shots" :replay="replay" :visuals-busy="visualsBusy" :can-make-replay="canMakeReplay" :starting-replay="startingReplay" :deeper="deeper" :starting-deeper="startingDeeper" @make-replay="startReplay" @start-deeper="startDeeper" />
+                  :shots="shots" :replay="replay" :visuals-busy="visualsBusy" :can-make-replay="canMakeReplay" :starting-replay="startingReplay" :deeper="deeper" :starting-deeper="startingDeeper" :deeper-auto="deeperAuto" :replay-auto="replayAuto" @make-replay="startReplay" @start-deeper="startDeeper" />
       <q-inner-loading :showing="loadingNotes" />
     </template>
 
@@ -116,11 +116,13 @@ import { friendly } from '../util/errors'
 import { plural } from '../util/format'
 import { isBusy, isRecording, kindOf } from '../util/status'
 import { useRealtimeStore } from '../stores/realtime'
+import { useAuthStore } from '../stores/auth'
 
 const props = defineProps({ id: { type: String, required: true } })
 const $q = useQuasar()
 const router = useRouter()
 const library = useLibraryStore()
+const auth = useAuthStore()
 const realtime = useRealtimeStore()
 
 const session = ref(null)
@@ -141,6 +143,10 @@ const shots = ref([])
 const startingReplay = ref(false)
 const deeper = ref(null)               // "Go deeper": state and, when ready, what was found
 const startingDeeper = ref(false)
+const replayAuto = computed(() => !!(auth.config && auth.config.features && auth.config.features.visuals))
+let replayAutoTried = ''                // the lecture for which the replay was started by itself (once)
+const deeperAuto = computed(() => !!(auth.config && auth.config.features && auth.config.features.deeper_auto))
+let deeperAutoTried = ''                 // the lecture for which it was started by itself (once)
 
 const bgBusy = (r) => !!r && (['queued', 'processing'].includes(r.state) || ['queued', 'processing'].includes(r.visuals_state))
 const visualsBusy = computed(() => !!replay.value && ['queued', 'processing'].includes(replay.value.visuals_state))
@@ -227,6 +233,11 @@ async function refreshExtras() {
       $q.notify({ type: 'positive', message: added > 0 ? `The notes now include the board and screen content, and ${plural(added, 'question')} about the board ${added === 1 ? 'was' : 'were'} added to the quiz.` : 'The notes now include the board and screen content.' })
     }
   } catch { /* the extras are optional: the notes stay usable */ }
+  if (replay.value && replay.value.state === 'none' && replay.value.visuals_state === 'none' && replayAuto.value && canMakeReplay.value && replayAutoTried !== props.id) {
+    replayAutoTried = props.id                 // a lecture from before replays existed: make it once, without a button to press
+    startReplay()
+    return
+  }
   if (!gone && bgBusy(replay.value)) extrasTimer = setTimeout(refreshExtras, 4000)
 }
 
@@ -242,6 +253,11 @@ async function refreshDeeper() {
       quizCount.value = quiz.questions.length
     }
   } catch { /* optional */ }
+  if (deeper.value && deeper.value.state === 'none' && deeperAuto.value && deeperAutoTried !== props.id) {      // a lecture from before it was made by itself
+    deeperAutoTried = props.id
+    startDeeper()
+    return
+  }
   if (!gone && deeper.value && ['queued', 'processing'].includes(deeper.value.state)) deeperTimer = setTimeout(refreshDeeper, 5000)
 }
 

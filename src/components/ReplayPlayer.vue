@@ -43,7 +43,7 @@
     </div>
 
     <!-- being made -->
-    <div v-else-if="replay && (replay.state === 'queued' || replay.state === 'processing' || visualsBusy)" class="lk-replay-wait">
+    <div v-else-if="replay && (replay.state === 'queued' || replay.state === 'processing' || visualsBusy || (replay.state === 'none' && auto && canMake))" class="lk-replay-wait">
       <q-icon name="movie_filter" size="44px" color="primary" />
       <div class="lk-section-title q-mt-sm">Preparing the replay</div>
       <div class="lk-meta q-mb-md">{{ waitText }}</div>
@@ -73,7 +73,7 @@
 import { computed, nextTick, ref } from 'vue'
 import { clock, formatSize } from '../util/format'
 
-const props = defineProps({ replay: { type: Object, default: null }, shots: { type: Array, default: () => [] }, canMake: Boolean, starting: Boolean })
+const props = defineProps({ replay: { type: Object, default: null }, shots: { type: Array, default: () => [] }, canMake: Boolean, starting: Boolean, auto: Boolean })
 defineEmits(['make'])
 const media = ref(null)
 const speeds = [0.75, 1, 1.25, 1.5, 2]

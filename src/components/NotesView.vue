@@ -109,7 +109,7 @@
       </q-tab-panel>
 
       <q-tab-panel name="deeper" class="lk-no-print lk-mom-panel">
-        <deeper-view :deeper="deeper" :notes="notes" :starting="startingDeeper" @start="$emit('start-deeper')" />
+        <deeper-view :deeper="deeper" :notes="notes" :starting="startingDeeper" :auto="deeperAuto" @start="$emit('start-deeper')" />
       </q-tab-panel>
 
       <q-tab-panel name="moments" class="lk-no-print lk-mom-panel">
@@ -117,7 +117,7 @@
       </q-tab-panel>
 
       <q-tab-panel name="recording" class="lk-no-print lk-mom-panel">
-        <replay-player ref="player" :replay="replay" :shots="shots" :can-make="canMakeReplay" :starting="startingReplay" @make="$emit('make-replay')" />
+        <replay-player ref="player" :replay="replay" :shots="shots" :can-make="canMakeReplay" :starting="startingReplay" :auto="replayAuto" @make="$emit('make-replay')" />
       </q-tab-panel>
     </q-tab-panels>
   </q-card>
@@ -144,6 +144,8 @@ const props = defineProps({
   startingReplay: Boolean,
   deeper: { type: Object, default: null },
   startingDeeper: Boolean,
+  deeperAuto: Boolean,
+  replayAuto: Boolean,
 })
 defineEmits(['make-replay', 'start-deeper'])
 const tab = ref('full')
