@@ -8,6 +8,6 @@ const api = process.env.LK_API || 'https://localhost:8443'
 export default defineConfig({
   base: '/',
   plugins: [vue({ template: { transformAssetUrls } }), quasar()],
-  server: { port: 5173, proxy: { '/api': { target: api, changeOrigin: true, secure: false } } },
+  server: { port: 5173, proxy: { '/api': { target: api, changeOrigin: true, secure: false, ws: true } } },
   test: { environment: 'jsdom', include: ['tests/**/*.test.js'] },
 })

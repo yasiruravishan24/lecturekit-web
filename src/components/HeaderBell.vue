@@ -14,18 +14,18 @@
       <q-list v-if="shown.length" class="lk-bell-list">
         <q-item v-for="n in shown" :key="n.id" clickable v-close-popup :class="{ unread: !n.read }" @click="open(n)">
           <q-item-section avatar>
-            <q-avatar size="34px" :color="n.kind === 'done' ? 'positive' : 'negative'" text-color="white" :icon="n.kind === 'done' ? 'check' : 'error_outline'" />
+            <q-avatar size="34px" :color="look(n).color" text-color="white" :icon="look(n).icon" />
           </q-item-section>
           <q-item-section>
-            <q-item-label class="lk-bell-title">{{ n.kind === 'done' ? 'Notes are ready' : 'Processing failed' }}</q-item-label>
+            <q-item-label class="lk-bell-title">{{ n.message }}</q-item-label>
             <q-item-label caption lines="2">{{ n.title }}{{ n.kind === 'failed' ? ' · open it to try again' : '' }}</q-item-label>
           </q-item-section>
-          <q-item-section side top><span class="lk-meta">{{ ago(n.at) }}</span></q-item-section>
+          <q-item-section side top><span class="lk-meta">{{ ago(n.created_at) }}</span></q-item-section>
         </q-item>
       </q-list>
       <div v-else class="lk-bell-empty">
         <q-icon name="notifications_none" size="32px" class="lk-dim" />
-        <div class="lk-meta">Nothing yet. You will be told here when a lecture finishes processing.</div>
+        <div class="lk-meta">Nothing yet. You will be told here when a recording starts or a lecture is ready, on every device.</div>
       </div>
     </q-menu>
   </q-btn>
@@ -40,12 +40,20 @@ import { useLibraryStore } from '../stores/library'
 const notes = useNotificationsStore()
 const library = useLibraryStore()
 const router = useRouter()
+const LOOK = {
+  recording_started: { color: 'negative', icon: 'fiber_manual_record' },
+  processing_started: { color: 'primary', icon: 'autorenew' },
+  notes_ready: { color: 'positive', icon: 'check' },
+  replay_ready: { color: 'teal', icon: 'movie' },
+  failed: { color: 'negative', icon: 'error_outline' },
+}
+const look = (n) => LOOK[n.kind] || { color: 'grey', icon: 'notifications' }
 // notices about lectures that were deleted since are not shown
-const shown = computed(() => notes.items.filter((i) => !library.loaded || library.session(i.sessionId)))
+const shown = computed(() => notes.items.filter((i) => !library.loaded || !i.session_id || library.session(i.session_id)))
 
 function open(n) {
   notes.markRead(n.id)
-  router.push(`/sessions/${n.sessionId}`)
+  if (n.session_id) router.push(`/sessions/${n.session_id}`)
 }
 function ago(iso) {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)

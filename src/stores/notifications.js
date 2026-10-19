@@ -1,51 +1,41 @@
 import { defineStore } from 'pinia'
+import * as api from '../api/notifications'
 
-// "Your notes are ready" / "Processing failed", kept in this browser. They are made when the lecture list shows that a lecture
-// which was being processed has finished, so they appear while the app is open or the next time it is opened.
-const MAX = 30
-const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) || fallback } catch { return fallback } }
-const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
-const BUSY = ['queued', 'processing']
-
+// "Recording started", "Making your notes", "Notes are ready", "Processing failed", "Replay is ready". They live on the server, so every
+// device shows the same list; new ones arrive on the WebSocket (stores/realtime.js) without a refresh.
 export const useNotificationsStore = defineStore('notifications', {
-  state: () => ({ uid: null, items: [], states: {} }),
-  getters: { unread: (s) => s.items.filter((i) => !i.read).length },
+  state: () => ({ items: [], unread: 0, loaded: false }),
   actions: {
-    start(userId) {
-      this.uid = userId
-      this.items = read(`lk_notes_${userId}`, [])
-      this.states = read(`lk_states_${userId}`, {})
+    async load() {
+      try {
+        const r = await api.listNotifications()
+        this.items = r.items
+        this.unread = r.unread
+        this.loaded = true
+      } catch { /* the bell stays as it is */ }
     },
-    // sessions: the flat list of lectures. Returns the notifications just made.
-    observe(sessions) {
-      if (this.uid == null) return []
-      const made = []
-      const next = {}
-      for (const s of sessions) {
-        next[s.id] = s.state
-        if (BUSY.includes(this.states[s.id]) && (s.state === 'done' || s.state === 'failed')) {
-          made.push({ id: `${s.id}-${Date.now()}`, sessionId: s.id, title: s.title, kind: s.state, at: new Date().toISOString(), read: false })
-        }
-      }
-      this.states = next
-      write(`lk_states_${this.uid}`, next)
-      if (made.length) {
-        this.items = [...made, ...this.items].slice(0, MAX)
-        write(`lk_notes_${this.uid}`, this.items)
-      }
-      return made
+    push(n) {                                            // one that just arrived on the socket
+      if (this.items.some((x) => x.id === n.id)) return
+      this.items = [n, ...this.items].slice(0, 50)
+      if (!n.read) this.unread += 1
     },
-    markRead(id) {
-      this.items = this.items.map((i) => (i.id === id ? { ...i, read: true } : i))
-      write(`lk_notes_${this.uid}`, this.items)
+    async markRead(id) {
+      const n = this.items.find((x) => x.id === id)
+      if (!n || n.read) return
+      n.read = true
+      this.unread = Math.max(0, this.unread - 1)
+      api.markRead(id).catch(() => {})
     },
-    markAllRead() {
-      this.items = this.items.map((i) => ({ ...i, read: true }))
-      write(`lk_notes_${this.uid}`, this.items)
+    async markAllRead() {
+      this.items.forEach((n) => { n.read = true })
+      this.unread = 0
+      api.markAllRead().catch(() => {})
     },
-    clear() {
+    async clear() {
       this.items = []
-      write(`lk_notes_${this.uid}`, [])
+      this.unread = 0
+      api.clearNotifications().catch(() => {})
     },
+    reset() { this.items = []; this.unread = 0; this.loaded = false },
   },
 })

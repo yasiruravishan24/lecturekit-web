@@ -71,7 +71,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
 
   // the notes appear by themselves
   await expect(page.getByRole('tab', { name: /Full notes/ })).toBeVisible({ timeout: 300000 })
-  await expect(page.getByRole('button', { name: 'Notifications' }).locator('.q-badge')).toHaveText('1')      // "notes are ready" was announced
+  await expect(page.getByRole('button', { name: 'Notifications' }).locator('.q-badge')).toBeVisible()      // "making your notes" and "notes are ready" were announced, without a refresh
   await expect(page.getByText('Summary').first()).toBeVisible()
   await expect(page.getByText('Key points').first()).toBeVisible()
   await shot('08-notes')

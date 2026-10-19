@@ -20,5 +20,6 @@ h2 { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight
 .body :deep(ul) { margin: 0 0 12px; padding-left: 20px; max-width: 70ch; }
 .body :deep(li) { margin-bottom: 8px; line-height: 1.7; }
 .body :deep(li::marker) { color: var(--lk-link); }
+@media (max-width: 1023px) { .body :deep(p), .body :deep(ul) { max-width: none; } }          /* narrow window: use the whole width, not a 70-letter column */
 @media (max-width: 599px) { .body { padding-left: 0; } }
 </style>

@@ -56,13 +56,22 @@
         </q-card-section>
       </q-card>
 
-      <!-- live recording that was not finished -->
-      <q-card v-else-if="session.state === 'live'" flat bordered class="lk-card">
-        <q-card-section>
-          <div class="lk-section-title">This recording was not finished</div>
-          <div class="lk-meta q-mb-md">{{ liveText }}</div>
-          <q-btn unelevated color="primary" icon="auto_awesome" label="Finish and make notes" :loading="working" :disable="!liveTotal" @click="finishLive" />
-        </q-card-section>
+      <!-- a recording made with the extension (or the mobile app): going on, or not finished -->
+      <q-card v-else-if="session.state === 'live'" flat bordered class="lk-card lk-live" :class="{ going: recordingNow }">
+        <div class="lk-live-top">
+          <span class="lk-live-icon"><q-icon :name="recordingNow ? 'sensors' : 'pause_circle'" size="30px" /></span>
+          <div class="lk-live-text">
+            <div class="lk-live-title">{{ recordingNow ? 'Recording in progress' : 'This recording was not finished' }}</div>
+            <div class="lk-meta">
+              <template v-if="recordingNow">A part reaches the server about every 5 minutes. This page updates by itself. Stop the recording in the extension to make the notes.</template>
+              <template v-else>{{ liveTotal ? 'The recording stopped before it was finished. You can make notes from what arrived.' : 'No part of the recording reached the server.' }}</template>
+            </div>
+          </div>
+        </div>
+        <div v-if="!recordingNow" class="lk-live-actions">
+          <q-btn unelevated color="primary" no-caps icon="auto_awesome" label="Finish and make notes" :loading="working" :disable="!liveTotal" @click="finishLive" />
+          <q-btn flat color="negative" no-caps icon="delete" label="Delete this recording" :disable="working" @click="remove" />
+        </div>
       </q-card>
 
       <!-- empty -->
@@ -105,12 +114,14 @@ import EmptyState from '../components/EmptyState.vue'
 import { askName, confirmDelete } from '../util/dialogs'
 import { friendly } from '../util/errors'
 import { plural } from '../util/format'
-import { isBusy, kindOf } from '../util/status'
+import { isBusy, isRecording, kindOf } from '../util/status'
+import { useRealtimeStore } from '../stores/realtime'
 
 const props = defineProps({ id: { type: String, required: true } })
 const $q = useQuasar()
 const router = useRouter()
 const library = useLibraryStore()
+const realtime = useRealtimeStore()
 
 const session = ref(null)
 const job = ref(null)
@@ -121,8 +132,10 @@ const notFound = ref(false)
 const working = ref(false)
 const loadingNotes = ref(false)
 const error = ref('')
-const liveText = ref('')
+const liveReceived = ref(0)
 const liveTotal = ref(0)
+const liveTranscribed = ref(0)
+const liveSeconds = ref(300)
 const replay = ref(null)                // the replay and the state of the extra background work
 const shots = ref([])
 const startingReplay = ref(false)
@@ -130,6 +143,8 @@ const startingReplay = ref(false)
 const bgBusy = (r) => !!r && (['queued', 'processing'].includes(r.state) || ['queued', 'processing'].includes(r.visuals_state))
 const visualsBusy = computed(() => !!replay.value && ['queued', 'processing'].includes(replay.value.visuals_state))
 const canMakeReplay = computed(() => !!session.value && session.value.files.some((f) => f.kind === 'recording' && !f.removed))
+const recordingNow = computed(() => !!session.value && isRecording(session.value))
+const liveMinutes = computed(() => Math.round((liveReceived.value * liveSeconds.value) / 60))
 const showNotes = computed(() => !!session.value && session.value.state === 'done' && !!notes.value)
 const where = computed(() => (session.value ? library.module(session.value.module_id) : null))
 const slideCount = computed(() => (session.value ? session.value.files.filter((f) => f.kind === 'slides').length : 0))
@@ -185,13 +200,11 @@ async function loadLive() {
   try {
     const s = await sessionsApi.liveStatus(props.id)
     const received = s.received || []
+    liveReceived.value = received.length
+    liveTranscribed.value = (s.transcribed || []).length
+    liveSeconds.value = s.chunk_seconds || 300
     liveTotal.value = received.length ? Math.max(...received) + 1 : 0
-    liveText.value = liveTotal.value
-      ? `${plural(received.length, 'part')} of the recording reached the server. You can finish it now and make notes from what arrived.`
-      : 'No part of the recording reached the server.'
-  } catch (e) {
-    liveText.value = friendly(e)
-  }
+  } catch { /* the numbers stay as they were */ }
 }
 
 // the replay and the board pictures are made after the notes: look at them now and then until they are finished
@@ -301,5 +314,15 @@ async function downloadPdf() {
 
 onMounted(() => { startedAt = Date.now(); load() })
 onBeforeUnmount(() => { gone = true; stopPolling() })
+// the server pushes changes (the extension or the mobile app did something, a job moved on): look again, without a refresh
+watch(() => realtime.syncTick, async () => {
+  if (!session.value || gone) return
+  await load()
+  if (session.value && session.value.state === 'done') refreshExtras()
+})
+watch(() => realtime.jobs[props.id], (j) => {                           // progress of the job that is running now
+  if (j && session.value && isBusy(session.value)) job.value = { ...(job.value || {}), state: 'processing', stage: j.stage, percent: j.percent, message: j.message }
+})
+
 watch(() => props.id, () => { session.value = null; job.value = null; notes.value = null; replay.value = null; shots.value = []; quizCount.value = null; attempts.value = []; notFound.value = false; stopPolling(); startedAt = Date.now(); load() })
 </script>

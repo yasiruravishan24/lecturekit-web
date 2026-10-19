@@ -121,8 +121,9 @@ const onScroll = () => {
 .lk-glance li { margin-bottom: 4px; line-height: 1.6; }
 
 @media (max-width: 1023px) {
-  .lk-legal-grid { grid-template-columns: 1fr; margin-top: -20px; }
-  .lk-toc { position: static; padding-top: 0; }
+  .lk-legal-grid { grid-template-columns: 1fr; margin-top: 16px; gap: 16px; }                 /* below the blue banner, not half hidden under it */
+  .lk-toc { position: static; padding-top: 0; z-index: 2; }
+  .lk-hero { padding-bottom: 36px; }
   .lk-hero h1 { font-size: 30px; }
   .lk-doc-card { padding: 24px 20px 12px; }
 }

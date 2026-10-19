@@ -38,12 +38,12 @@
       </div>
 
       <div class="lk-grid3">
-        <q-card v-for="m in course.modules" :key="m.id" flat bordered class="lk-card lk-hover">
-          <q-card-section class="row items-center no-wrap q-pb-sm">
-            <q-icon name="folder_special" size="30px" color="primary" class="q-mr-md" />
-            <div class="col" style="min-width: 0">
-              <div class="lk-section-title ellipsis">{{ m.name }}</div>
-              <div class="lk-meta">{{ plural(m.sessions.length, 'session') }}</div>
+        <article v-for="m in course.modules" :key="m.id" class="lk-modcard">
+          <header class="lk-modcard-head">
+            <span class="lk-modcard-icon"><q-icon name="folder_special" size="24px" /></span>
+            <div class="lk-modcard-name">
+              <router-link :to="`/modules/${m.id}`" class="lk-modcard-title">{{ m.name }}</router-link>
+              <span class="lk-meta">{{ plural(m.sessions.length, 'session') }}<template v-if="busyCount(m)"> · {{ busyCount(m) }} working</template></span>
             </div>
             <q-btn flat round dense icon="more_vert" aria-label="Module menu">
               <q-menu><q-list style="min-width: 160px">
@@ -51,17 +51,27 @@
                 <q-item clickable v-close-popup @click="deleteModule(m)"><q-item-section avatar><q-icon name="delete" color="negative" /></q-item-section><q-item-section class="text-negative">Delete</q-item-section></q-item>
               </q-list></q-menu>
             </q-btn>
-          </q-card-section>
-          <q-separator />
-          <q-list>
-            <session-row v-for="s in latest(m)" :key="s.id" :session="s" />
-            <q-item v-if="!m.sessions.length"><q-item-section class="lk-meta">No sessions yet.</q-item-section></q-item>
-          </q-list>
-          <q-separator />
-          <q-card-actions>
-            <q-btn flat color="primary" label="Open module" :to="`/modules/${m.id}`" />
-          </q-card-actions>
-        </q-card>
+          </header>
+
+          <ul v-if="m.sessions.length" class="lk-modcard-list">
+            <li v-for="s in latest(m)" :key="s.id">
+              <router-link :to="`/sessions/${s.id}`" class="lk-modcard-row">
+                <span class="lk-modcard-kind"><q-icon :name="kindOf(s).icon" size="20px" /></span>
+                <span class="lk-modcard-text">
+                  <span class="lk-modcard-stitle">{{ s.title }}</span>
+                  <span class="lk-meta">{{ sessionMeta(s) }}</span>
+                </span>
+                <status-chip :session="s" />
+              </router-link>
+            </li>
+          </ul>
+          <div v-else class="lk-modcard-empty lk-meta">No sessions yet.</div>
+
+          <footer class="lk-modcard-foot">
+            <router-link :to="`/modules/${m.id}`" class="lk-modcard-open">{{ m.sessions.length > 2 ? `View all ${m.sessions.length} sessions` : 'Open module' }} <q-icon name="arrow_forward" size="16px" /></router-link>
+            <q-btn flat round dense icon="add" color="primary" aria-label="New session in this module" :to="{ path: '/new', query: { module: m.id } }"><q-tooltip>New session</q-tooltip></q-btn>
+          </footer>
+        </article>
       </div>
     </template>
     <q-inner-loading :showing="library.loading && !library.loaded" />
@@ -73,11 +83,12 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useLibraryStore } from '../stores/library'
-import SessionRow from '../components/SessionRow.vue'
+import StatusChip from '../components/StatusChip.vue'
+import { isBusy, kindOf } from '../util/status'
 import EmptyState from '../components/EmptyState.vue'
 import { askName, confirmDelete } from '../util/dialogs'
 import { friendly } from '../util/errors'
-import { formatDate, plural } from '../util/format'
+import { formatDate, formatDuration, plural } from '../util/format'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -92,7 +103,9 @@ const summary = computed(() => {
   return `${plural(c.modules.length, 'module')} · ${plural(n, 'session')}` + (last ? ` · last session ${formatDate(last, true)}` : '')
 })
 
-const latest = (m) => [...m.sessions].sort((a, b) => b.id - a.id).slice(0, 3)
+const latest = (m) => [...m.sessions].sort((a, b) => b.id - a.id).slice(0, 2)
+const busyCount = (m) => m.sessions.filter(isBusy).length
+const sessionMeta = (s) => [formatDate(s.created_at), kindOf(s).word, s.duration_seconds != null ? formatDuration(s.duration_seconds) : ''].filter(Boolean).join(' · ')
 const select = (id) => router.replace({ query: { course: id } })
 const fail = (e) => $q.notify({ type: 'negative', message: friendly(e) })
 
@@ -123,3 +136,25 @@ async function deleteModule(m) {
   try { await library.removeModule(m.id) } catch (e) { fail(e) }
 }
 </script>
+
+<style scoped>
+.lk-modcard { display: flex; flex-direction: column; background: var(--lk-surface); border: 1px solid var(--lk-border); border-radius: 14px; box-shadow: var(--lk-shadow); transition: box-shadow 0.18s, border-color 0.18s; }
+.lk-modcard:hover { box-shadow: var(--lk-shadow-lg); border-color: var(--lk-primary); }
+.lk-modcard-head { display: flex; align-items: center; gap: 12px; padding: 14px 12px 12px 16px; }
+.lk-modcard-icon { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--lk-tint); color: var(--lk-primary); display: grid; place-items: center; }
+.lk-modcard-name { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.lk-modcard-title { font-size: 16px; font-weight: 500; color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-modcard-title:hover { color: var(--lk-link); }
+.lk-modcard-list { list-style: none; margin: 0; padding: 0 8px; display: flex; flex-direction: column; gap: 2px; }
+.lk-modcard-row { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 10px; color: inherit; text-decoration: none; }
+.lk-modcard-row:hover { background: var(--lk-tint); }
+.lk-modcard-row:focus-visible, .lk-modcard-open:focus-visible, .lk-modcard-title:focus-visible { outline: 2px solid var(--lk-primary); outline-offset: 2px; }
+.lk-modcard-kind { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--lk-surface-2); color: var(--lk-primary); display: grid; place-items: center; }
+.lk-modcard-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.lk-modcard-stitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-modcard-empty { padding: 8px 16px 14px; }
+.lk-modcard-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 8px 16px; margin-top: 6px; border-top: 1px solid var(--lk-border); }
+.lk-modcard-open { display: inline-flex; align-items: center; gap: 6px; color: var(--lk-link); text-decoration: none; font-weight: 500; font-size: 14px; }
+.lk-modcard-open:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .lk-modcard { transition: none; } }
+</style>

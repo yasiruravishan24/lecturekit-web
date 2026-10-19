@@ -142,7 +142,7 @@ test('a recording that cannot be read shows a plain message and Try again', asyn
   await expect(page.getByText('Ready to make notes')).toBeVisible()
   await page.getByRole('button', { name: 'Make notes' }).click()
   await expect(page.getByText('The notes could not be made')).toBeVisible({ timeout: 60000 })
-  await expect(page.getByText('ffmpeg could not read this file')).toBeVisible()
+  await expect(page.getByText('ffmpeg could not read this file').first()).toBeVisible()          // the page and the pop-up both say it
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
   await expect(page.locator('.lk-chip', { hasText: 'Failed' })).toBeVisible()
   await page.screenshot({ path: path.join(shots, 'e1-failed.png'), fullPage: true })
@@ -159,7 +159,7 @@ test('the daily limit is explained and the lecture stays uploaded', async ({ pag
   }
   const probe = (await makeSession(user, 'Probe')).session
   await upload(user, probe.id, [['broken.mp4', Buffer.from('not a video')]])
-  test.skip((await startProcessing(user, probe.id)).status !== 429, 'the daily limit is off (APP_ENV=local)')
+  test.skip((await startProcessing(user, probe.id)).status !== 429, 'the daily limit is off (CHECK_DAILY_LIMIT=false)')
   await loginAs(page, user)
   await page.goto('/new')
   await page.getByLabel('Session title *').fill('Sixth lecture')

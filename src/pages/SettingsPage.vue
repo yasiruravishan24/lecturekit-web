@@ -120,7 +120,7 @@ async function remove() {
 </script>
 
 <style scoped>
-.lk-set { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 1100px; align-items: start; }
+.lk-set { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
 .lk-set-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .lk-set-profile { display: flex; align-items: center; gap: 18px; padding: 22px; }
 .lk-set-id { min-width: 0; }

@@ -97,6 +97,7 @@ import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
 import { useUiStore } from '../stores/ui'
 import { useNotificationsStore } from '../stores/notifications'
+import { useRealtimeStore } from '../stores/realtime'
 import HeaderSearch from '../components/HeaderSearch.vue'
 import HeaderProcessing from '../components/HeaderProcessing.vue'
 import HeaderBell from '../components/HeaderBell.vue'
@@ -110,6 +111,7 @@ const auth = useAuthStore()
 const library = useLibraryStore()
 const ui = useUiStore()
 const notes = useNotificationsStore()
+const realtime = useRealtimeStore()
 const isDark = computed(() => $q.dark.isActive)
 const drawer = ref(false)
 
@@ -129,6 +131,8 @@ const isOpen = (c) => (c.id in opened.value ? opened.value[c.id] : hasCurrent(c)
 const toggle = (c) => { opened.value = { ...opened.value, [c.id]: !isOpen(c) } }
 
 function logout() {
+  realtime.stop()
+  notes.reset()
   auth.logout()
   library.reset()
   router.push('/login')
@@ -136,23 +140,14 @@ function logout() {
 
 // lectures being processed change by themselves: refresh the lists now and then while any is busy and the tab is visible
 let timer = null
-function announce() {
-  if (!library.loaded || !notes.uid) return
-  for (const n of notes.observe(library.allSessions)) {                  // a lecture finished while the app was open, or since the last visit
-    $q.notify({
-      type: n.kind === 'done' ? 'positive' : 'negative', message: n.kind === 'done' ? `Notes are ready: ${n.title}` : `Processing failed: ${n.title}`, timeout: 8000,
-      actions: [{ label: 'Open', color: 'white', handler: () => { notes.markRead(n.id); router.push(`/sessions/${n.sessionId}`) } }],
-    })
-  }
-}
-watch(() => library.courses, announce)
-watch(() => auth.user && auth.user.id, (id) => { if (id) { notes.start(id); announce() } }, { immediate: true })
+// one WebSocket tells this page what changes (the extension, another browser, later the mobile app)
+watch(() => auth.user && auth.user.id, (id) => { if (id) { notes.load(); realtime.start() } }, { immediate: true })
 
 onMounted(async () => {
   try { await library.load() } catch (e) { $q.notify({ type: 'negative', message: friendly(e) }) }
   timer = setInterval(() => {
-    if (library.anyBusy && !document.hidden) library.refresh().catch(() => {})
+    if ((library.anyBusy || !realtime.connected) && !document.hidden) library.refresh().catch(() => {})       // the socket does this; this is the fallback
   }, 6000)
 })
-onBeforeUnmount(() => clearInterval(timer))
+onBeforeUnmount(() => { clearInterval(timer); realtime.stop() })
 </script>

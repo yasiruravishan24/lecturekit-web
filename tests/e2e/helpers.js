@@ -17,6 +17,8 @@ async function call(method, url, token, body, form) {
   return { status: res.status, json: text ? JSON.parse(text) : null }
 }
 
+export const api = (method, url, user, body) => call(method, url, user.token, body)     // what another device (the extension, the phone) would do
+
 export async function makeUser(label) {
   const email = `${label}${Date.now()}${Math.floor(Math.random() * 1000)}@example.com`
   const reg = await call('POST', '/auth/register', null, { full_name: `${label} Tester`, email, password: PASSWORD, accept_terms: true })

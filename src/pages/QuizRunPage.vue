@@ -129,7 +129,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.lk-run { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; max-width: 1200px; }
+.lk-run { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
 .lk-run-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .lk-q-text { font-size: 18px; font-weight: 500; margin-bottom: 18px; }
 .lk-q-text :deep(.lk-rich-p) { line-height: 1.5; }
