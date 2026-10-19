@@ -19,6 +19,7 @@
               <div class="q-mb-md">
                 <span v-if="q.bloom_level" class="lk-chip bloom q-mr-sm">Bloom level: {{ cap(q.bloom_level) }}</span>
                 <span v-if="q.source === 'board'" class="lk-chip info q-mr-sm"><q-icon name="draw" size="14px" /> From the board</span>
+                <span v-if="q.source === 'extra'" class="lk-chip info q-mr-sm"><q-icon name="travel_explore" size="14px" /> Beyond the lecture</span>
               </div>
               <div id="question-text" class="lk-q-text"><rich-text :text="q.question" legacy /></div>
               <div class="lk-opts" role="radiogroup" aria-labelledby="question-text">

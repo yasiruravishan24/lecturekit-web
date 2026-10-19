@@ -98,6 +98,12 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   await page.locator('.lk-short-card').first().click()                                    // tick a point as known
   await expect(page.locator('.lk-short-card.known')).toHaveCount(1)
 
+  // Go deeper: made on request with real web search; ends with background, mistakes, pages to read, and extra quiz questions
+  await page.getByRole('tab', { name: /Learn more/ }).click()                                            // it is made by itself after the notes
+  await expect(page.getByText('Background', { exact: true }).first()).toBeVisible({ timeout: 240000 })
+  await shot('08c-go-deeper')
+  await page.getByRole('tab', { name: /Quiz \(\d+\)/ }).click()                                            // the quiz now has the extra questions too
+
   // the quiz: answer every question with the first option, then submit
   await page.getByRole('link', { name: 'Take quiz' }).first().click()
   await expect(page.getByText(/Question 1 of \d+/)).toBeVisible()

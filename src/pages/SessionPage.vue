@@ -85,7 +85,7 @@
 
       <!-- done -->
       <notes-view v-else-if="notes" :notes="notes" :session-id="session.id" :slide-count="slideCount" :quiz-count="quizCount" :attempts="attempts"
-                  :shots="shots" :replay="replay" :visuals-busy="visualsBusy" :can-make-replay="canMakeReplay" :starting-replay="startingReplay" @make-replay="startReplay" />
+                  :shots="shots" :replay="replay" :visuals-busy="visualsBusy" :can-make-replay="canMakeReplay" :starting-replay="startingReplay" :deeper="deeper" :starting-deeper="startingDeeper" @make-replay="startReplay" @start-deeper="startDeeper" />
       <q-inner-loading :showing="loadingNotes" />
     </template>
 
@@ -139,6 +139,8 @@ const liveSeconds = ref(300)
 const replay = ref(null)                // the replay and the state of the extra background work
 const shots = ref([])
 const startingReplay = ref(false)
+const deeper = ref(null)               // "Go deeper": state and, when ready, what was found
+const startingDeeper = ref(false)
 
 const bgBusy = (r) => !!r && (['queued', 'processing'].includes(r.state) || ['queued', 'processing'].includes(r.visuals_state))
 const visualsBusy = computed(() => !!replay.value && ['queued', 'processing'].includes(replay.value.visuals_state))
@@ -163,7 +165,7 @@ let timer = null
 let startedAt = 0
 let gone = false
 
-const stopPolling = () => { clearTimeout(timer); timer = null; clearTimeout(extrasTimer) }
+const stopPolling = () => { clearTimeout(timer); timer = null; clearTimeout(extrasTimer); clearTimeout(deeperTimer) }
 
 async function load() {
   error.value = ''
@@ -189,6 +191,7 @@ async function loadResults() {
     quizApi.getQuiz(props.id).then((q) => { quizCount.value = q.questions.length }).catch(() => {})
     quizApi.listAttempts(props.id).then((a) => { attempts.value = a }).catch(() => {})
     refreshExtras()
+    refreshDeeper()
   } catch (e) {
     error.value = friendly(e)
   } finally {
@@ -225,6 +228,33 @@ async function refreshExtras() {
     }
   } catch { /* the extras are optional: the notes stay usable */ }
   if (!gone && bgBusy(replay.value)) extrasTimer = setTimeout(refreshExtras, 4000)
+}
+
+// "Go deeper" is made on request, in the background: look at it now and then while it is being made (the socket also tells us)
+let deeperTimer = null
+async function refreshDeeper() {
+  clearTimeout(deeperTimer)
+  try {
+    const before = deeper.value ? deeper.value.state : null
+    deeper.value = await sessionsApi.getDeeper(props.id)
+    if (before && before !== 'done' && deeper.value.state === 'done') {
+      const quiz = await quizApi.getQuiz(props.id)                         // it added questions
+      quizCount.value = quiz.questions.length
+    }
+  } catch { /* optional */ }
+  if (!gone && deeper.value && ['queued', 'processing'].includes(deeper.value.state)) deeperTimer = setTimeout(refreshDeeper, 5000)
+}
+
+async function startDeeper() {
+  startingDeeper.value = true
+  try {
+    await sessionsApi.startDeeper(props.id)
+    await refreshDeeper()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: friendly(e) })
+  } finally {
+    startingDeeper.value = false
+  }
 }
 
 async function startReplay() {
@@ -318,11 +348,11 @@ onBeforeUnmount(() => { gone = true; stopPolling() })
 watch(() => realtime.syncTick, async () => {
   if (!session.value || gone) return
   await load()
-  if (session.value && session.value.state === 'done') refreshExtras()
+  if (session.value && session.value.state === 'done') { refreshExtras(); refreshDeeper() }
 })
 watch(() => realtime.jobs[props.id], (j) => {                           // progress of the job that is running now
   if (j && session.value && isBusy(session.value)) job.value = { ...(job.value || {}), state: 'processing', stage: j.stage, percent: j.percent, message: j.message }
 })
 
-watch(() => props.id, () => { session.value = null; job.value = null; notes.value = null; replay.value = null; shots.value = []; quizCount.value = null; attempts.value = []; notFound.value = false; stopPolling(); startedAt = Date.now(); load() })
+watch(() => props.id, () => { session.value = null; job.value = null; notes.value = null; replay.value = null; shots.value = []; quizCount.value = null; deeper.value = null; attempts.value = []; notFound.value = false; stopPolling(); startedAt = Date.now(); load() })
 </script>

@@ -4,6 +4,7 @@
       <q-tab name="full" icon="description" label="Full notes" />
       <q-tab name="short" icon="short_text" label="Short notes" />
       <q-tab name="quiz" icon="quiz" :label="`Quiz${quizCount != null ? ` (${quizCount})` : ''}`" />
+      <q-tab name="deeper" icon="travel_explore" :label="DEEPER_NAME" />
       <q-tab name="moments" icon="photo_library" :label="`Key moments${shots.length ? ` (${shots.length})` : ''}`" />
       <q-tab name="recording" icon="play_circle" label="Recording" />
     </q-tabs>
@@ -107,6 +108,10 @@
         </div>
       </q-tab-panel>
 
+      <q-tab-panel name="deeper" class="lk-no-print lk-mom-panel">
+        <deeper-view :deeper="deeper" :notes="notes" :starting="startingDeeper" @start="$emit('start-deeper')" />
+      </q-tab-panel>
+
       <q-tab-panel name="moments" class="lk-no-print lk-mom-panel">
         <shots-gallery :shots="shots" :busy="visualsBusy" :can-play="!!(replay && replay.state === 'ready')" :empty-title="momentsEmpty.title" :empty-text="momentsEmpty.text" @play="playFrom" />
       </q-tab-panel>
@@ -123,6 +128,8 @@ import { computed, nextTick, ref } from 'vue'
 import { formatDate, plural } from '../util/format'
 import ReplayPlayer from './ReplayPlayer.vue'
 import ShotsGallery from './ShotsGallery.vue'
+import DeeperView from './DeeperView.vue'
+import { DEEPER_NAME } from '../util/names'
 
 const props = defineProps({
   notes: { type: Object, required: true },
@@ -135,8 +142,10 @@ const props = defineProps({
   visualsBusy: Boolean,
   canMakeReplay: Boolean,
   startingReplay: Boolean,
+  deeper: { type: Object, default: null },
+  startingDeeper: Boolean,
 })
-defineEmits(['make-replay'])
+defineEmits(['make-replay', 'start-deeper'])
 const tab = ref('full')
 const player = ref(null)
 

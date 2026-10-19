@@ -19,6 +19,8 @@ export const getJob = (id) => data(http.get(`/jobs/${id}`))
 export const getNotes = (id) => data(http.get(`/sessions/${id}/notes`))
 export const exportMarkdown = (id) => http.get(`/sessions/${id}/export.md`, { responseType: 'blob' }).then((r) => r.data)
 export const exportPdf = (id) => http.get(`/sessions/${id}/export.pdf`, { responseType: 'blob' }).then((r) => r.data)
+export const getDeeper = (id) => data(http.get(`/sessions/${id}/deeper`))
+export const startDeeper = (id) => data(http.post(`/sessions/${id}/deeper`))
 export const liveStatus = (id) => data(http.get(`/sessions/${id}/live`))
 export const finishLive = (id, total) => data(http.post(`/sessions/${id}/live/finish`, null, { params: { total } }))
 

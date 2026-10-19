@@ -17,8 +17,8 @@ let seenHello = false
 let lastMessage = 0
 
 const wsUrl = () => `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/ws`
-const TOAST = { recording_started: 'info', processing_started: 'info', notes_ready: 'positive', failed: 'negative', replay_ready: 'positive' }
-const ICON = { recording_started: 'fiber_manual_record', processing_started: 'autorenew', notes_ready: 'check_circle', failed: 'error', replay_ready: 'movie' }
+const TOAST = { recording_started: 'info', processing_started: 'info', notes_ready: 'positive', failed: 'negative', replay_ready: 'positive', deeper_ready: 'positive', deeper_failed: 'negative' }
+const ICON = { recording_started: 'fiber_manual_record', processing_started: 'autorenew', notes_ready: 'check_circle', failed: 'error', replay_ready: 'movie', deeper_ready: 'travel_explore', deeper_failed: 'error' }
 
 export const useRealtimeStore = defineStore('realtime', {
   state: () => ({ connected: false, syncTick: 0, jobs: {} }),

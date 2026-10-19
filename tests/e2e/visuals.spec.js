@@ -38,9 +38,9 @@ test('board pictures, refined notes, screenshots and a replay you can seek in', 
 
   // the quiz grew by questions about the board, after the old ones
   await page.goto(`/sessions/${session.id}`)
-  await expect(page.getByRole('tab', { name: /Quiz \((1[1-3])\)/ })).toBeVisible({ timeout: 120000 })
+  await expect(page.getByRole('tab', { name: /Quiz \((1[1-6])\)/ })).toBeVisible({ timeout: 120000 })
   await page.goto(`/quiz/${session.id}`)
-  await expect(page.getByText(/Question 1 of 1[1-3]/)).toBeVisible()
+  await expect(page.getByText(/Question 1 of 1[1-6]/)).toBeVisible()
   await expect(page.getByText('From the board')).toHaveCount(0)                              // the first questions are the old ones
   for (let i = 0; i < 10; i++) await page.getByRole('button', { name: 'Next' }).click()
   await expect(page.getByText('From the board')).toBeVisible()                               // the new ones come last

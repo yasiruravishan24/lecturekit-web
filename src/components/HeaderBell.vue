@@ -46,6 +46,8 @@ const LOOK = {
   notes_ready: { color: 'positive', icon: 'check' },
   replay_ready: { color: 'teal', icon: 'movie' },
   failed: { color: 'negative', icon: 'error_outline' },
+  deeper_ready: { color: 'teal', icon: 'travel_explore' },
+  deeper_failed: { color: 'negative', icon: 'error_outline' },
 }
 const look = (n) => LOOK[n.kind] || { color: 'grey', icon: 'notifications' }
 // notices about lectures that were deleted since are not shown
