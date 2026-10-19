@@ -17,7 +17,7 @@ test('a logged-out visitor is sent to the login page, whatever address is opened
   await expect(page).toHaveURL(/redirect=/)                            // and back to the lecture after logging in
 })
 
-test('dark mode: switch from the account menu, remembered after a reload', async ({ page }) => {
+test('dark mode: switch from the header button, remembered after a reload', async ({ page }) => {
   const user = await makeUser('dark')
   await makeSession(user, 'Night lecture')
   await loginAs(page, user)
@@ -26,10 +26,8 @@ test('dark mode: switch from the account menu, remembered after a reload', async
   await expect(page.getByText('Recent lectures')).toBeVisible()
   await expect(page.locator('body')).not.toHaveClass(/body--dark/)
   await page.screenshot({ path: path.join(shots, 'd1-light-dashboard.png'), fullPage: true })
-  await page.getByRole('button', { name: 'Account menu' }).click()
-  await page.getByText('Dark mode').click()
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click()
   await expect(page.locator('body')).toHaveClass(/body--dark/)
-  await page.keyboard.press('Escape')
   await page.waitForTimeout(600)                                       // let the colours finish changing
   await page.screenshot({ path: path.join(shots, 'd2-dark-dashboard.png'), fullPage: true })
   await page.goto('/courses')
@@ -38,8 +36,7 @@ test('dark mode: switch from the account menu, remembered after a reload', async
   await page.screenshot({ path: path.join(shots, 'd3-dark-courses.png'), fullPage: true })
   await page.reload()
   await expect(page.locator('body')).toHaveClass(/body--dark/)           // remembered
-  await page.getByRole('button', { name: 'Account menu' }).click()
-  await page.getByText('Dark mode').click()                                  // the same row switches back
+  await page.getByRole('button', { name: 'Switch to light mode' }).click()   // the same button switches back
   await expect(page.locator('body')).not.toHaveClass(/body--dark/)
 })
 
@@ -154,11 +151,15 @@ test('a recording that cannot be read shows a plain message and Try again', asyn
 test('the daily limit is explained and the lecture stays uploaded', async ({ page }) => {
   const user = await makeUser('limit')
   const { session, module } = await makeSession(user, 'First')
-  for (let i = 0; i < 5; i++) {                                   // five quick failures use up the day (failed jobs count too)
+  const limit = (await (await fetch(`${process.env.LK_WEB}/api/auth/config`)).json()).limits.daily_limit
+  for (let i = 0; i < limit; i++) {                               // quick failures use up the day (failed jobs count too)
     const s = i === 0 ? session : (await makeSession(user, `Extra ${i}`)).session
     await upload(user, s.id, [['broken.mp4', Buffer.from('not a video')]])
     await waitDone(user, (await startProcessing(user, s.id)).json.job_id)
   }
+  const probe = (await makeSession(user, 'Probe')).session
+  await upload(user, probe.id, [['broken.mp4', Buffer.from('not a video')]])
+  test.skip((await startProcessing(user, probe.id)).status !== 429, 'the daily limit is off (APP_ENV=local)')
   await loginAs(page, user)
   await page.goto('/new')
   await page.getByLabel('Session title *').fill('Sixth lecture')

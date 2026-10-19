@@ -52,6 +52,5 @@ test('board pictures, refined notes, screenshots and a replay you can seek in', 
   await page.getByRole('tab', { name: /Full notes/ }).click()
   expect(await page.locator('.lk-topic').filter({ hasText: /Newton|F = m/ }).count()).toBeGreaterThan(0)      // the board content is in the notes
   await page.goto('/settings')
-  await expect(page.getByText(/used/)).toBeVisible()
-  await expect(page.getByText('10 GB available')).toBeVisible()
+  await expect(page.getByText(/of 10 GB used/)).toBeVisible()
 })

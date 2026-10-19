@@ -3,10 +3,16 @@
     <q-header elevated class="bg-primary text-white" style="height: 50px">
       <q-toolbar style="min-height: 50px">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="drawer = !drawer" />
-        <q-toolbar-title class="row items-center no-wrap" style="font-size: 20px; font-weight: 500">
+        <q-toolbar-title class="row items-center no-wrap lk-brand" style="font-size: 20px; font-weight: 500; flex: 0 0 auto">
           <q-icon name="school" size="28px" class="q-mr-sm" />
-          Lecture Assistant
+          <span class="gt-xs">Lecture Assistant</span>
         </q-toolbar-title>
+        <header-search />
+        <header-processing />
+        <header-bell />
+        <q-btn flat round dense :icon="isDark ? 'light_mode' : 'dark_mode'" class="q-mr-sm" :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="ui.toggleDark()">
+          <q-tooltip>{{ isDark ? 'Light mode' : 'Dark mode' }}</q-tooltip>
+        </q-btn>
         <q-btn round flat no-caps aria-label="Account menu">
           <q-avatar size="32px" font-size="14px" color="white" text-color="primary" style="font-weight: 500">{{ initialsText }}</q-avatar>
           <q-menu class="lk-account-menu" anchor="bottom right" self="top right" :offset="[0, 8]">
@@ -22,11 +28,6 @@
               <q-item clickable v-close-popup to="/settings">
                 <q-item-section avatar><q-icon name="settings" /></q-item-section>
                 <q-item-section>Settings</q-item-section>
-              </q-item>
-              <q-item clickable @click="ui.toggleDark()">
-                <q-item-section avatar><q-icon :name="isDark ? 'dark_mode' : 'light_mode'" /></q-item-section>
-                <q-item-section>Dark mode</q-item-section>
-                <q-item-section side><q-toggle :model-value="isDark" dense color="primary" aria-label="Dark mode" @click.stop="ui.toggleDark()" /></q-item-section>
               </q-item>
             </q-list>
             <q-separator />
@@ -89,12 +90,16 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
 import { useUiStore } from '../stores/ui'
+import { useNotificationsStore } from '../stores/notifications'
+import HeaderSearch from '../components/HeaderSearch.vue'
+import HeaderProcessing from '../components/HeaderProcessing.vue'
+import HeaderBell from '../components/HeaderBell.vue'
 import { initials } from '../util/format'
 import { friendly } from '../util/errors'
 
@@ -104,6 +109,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const library = useLibraryStore()
 const ui = useUiStore()
+const notes = useNotificationsStore()
 const isDark = computed(() => $q.dark.isActive)
 const drawer = ref(false)
 
@@ -130,6 +136,18 @@ function logout() {
 
 // lectures being processed change by themselves: refresh the lists now and then while any is busy and the tab is visible
 let timer = null
+function announce() {
+  if (!library.loaded || !notes.uid) return
+  for (const n of notes.observe(library.allSessions)) {                  // a lecture finished while the app was open, or since the last visit
+    $q.notify({
+      type: n.kind === 'done' ? 'positive' : 'negative', message: n.kind === 'done' ? `Notes are ready: ${n.title}` : `Processing failed: ${n.title}`, timeout: 8000,
+      actions: [{ label: 'Open', color: 'white', handler: () => { notes.markRead(n.id); router.push(`/sessions/${n.sessionId}`) } }],
+    })
+  }
+}
+watch(() => library.courses, announce)
+watch(() => auth.user && auth.user.id, (id) => { if (id) { notes.start(id); announce() } }, { immediate: true })
+
 onMounted(async () => {
   try { await library.load() } catch (e) { $q.notify({ type: 'negative', message: friendly(e) }) }
   timer = setInterval(() => {

@@ -71,6 +71,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
 
   // the notes appear by themselves
   await expect(page.getByRole('tab', { name: /Full notes/ })).toBeVisible({ timeout: 300000 })
+  await expect(page.getByRole('button', { name: 'Notifications' }).locator('.q-badge')).toHaveText('1')      // "notes are ready" was announced
   await expect(page.getByText('Summary').first()).toBeVisible()
   await expect(page.getByText('Key points').first()).toBeVisible()
   await shot('08-notes')
@@ -113,6 +114,14 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   // the dashboard and the quiz list now show the lecture
   await page.goto('/')
   await expect(page.getByText('Strings and input')).toBeVisible()
+  await page.keyboard.press('/')                                                         // search from the header
+  await page.getByRole('searchbox', { name: 'Search' }).fill('strings')
+  await expect(page.getByRole('option', { name: /Strings and input/ })).toBeVisible()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/sessions\/\d+/)
+  await page.getByRole('button', { name: 'Notifications' }).click()
+  await expect(page.getByText('Notes are ready').first()).toBeVisible()
+  await page.keyboard.press('Escape')
   await page.goto('/quizzes')
   await expect(page.getByText(/Last score/)).toBeVisible()
   await shot('10b-quizzes')
