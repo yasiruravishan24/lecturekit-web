@@ -81,7 +81,9 @@ body.body--dark .q-menu, body.body--dark .q-dialog__inner > .q-card { background
 .lk-doc li { margin-bottom: 6px; }
 
 /* header */
-.q-header { background: linear-gradient(90deg, #1565c0 0%, #1976d2 55%, #2196f3 100%) !important; box-shadow: 0 2px 8px rgba(21, 101, 192, 0.35); }
+.q-header { background: linear-gradient(90deg, #1565c0 0%, #1976d2 55%, #2196f3 100%) !important; box-shadow: none; }
+.q-layout__shadow { display: none; }          /* no glow under the header */
+.q-layout__shadow:after { box-shadow: none !important; }
 
 /* tabs */
 .lk-tabs { background: var(--lk-surface); border-bottom: 1px solid var(--lk-border); color: var(--lk-text); }
