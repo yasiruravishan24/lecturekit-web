@@ -24,6 +24,14 @@
                         @update:model-value="ui.setTheme" />
         </q-card>
 
+        <q-card v-if="auth.user?.email_login" flat bordered class="lk-card lk-set-card">
+          <div class="lk-label q-mb-sm">Password</div>
+          <div class="lk-set-row">
+            <div class="lk-meta">Change the password you use to log in with your email.</div>
+            <q-btn outline color="primary" no-caps icon="lock_reset" label="Change password" @click="pwOpen = true" />
+          </div>
+        </q-card>
+
         <q-card flat bordered class="lk-card lk-set-card">
           <div class="lk-label q-mb-sm">Legal</div>
           <router-link :to="{ path: '/terms', query: { from: 'settings' } }" class="lk-set-link"><q-icon name="gavel" size="20px" /> Terms &amp; Conditions <q-icon name="chevron_right" size="20px" class="lk-set-go" /></router-link>
@@ -57,6 +65,25 @@
       </div>
     </div>
 
+    <q-dialog v-model="pwOpen" persistent @hide="resetPw">
+      <q-card style="min-width: 320px; max-width: 460px; width: 100%">
+        <q-form @submit.prevent="changePw">
+          <q-card-section>
+            <div class="text-h6">Change password</div>
+            <q-input v-model="pw.current" :type="pw.show ? 'text' : 'password'" outlined label="Current password" autocomplete="current-password" class="q-mt-md" autofocus />
+            <q-input v-model="pw.next" :type="pw.show ? 'text' : 'password'" outlined label="New password" autocomplete="new-password" hint="At least 8 characters" class="q-mt-md" />
+            <q-input v-model="pw.again" :type="pw.show ? 'text' : 'password'" outlined label="New password again" autocomplete="new-password" class="q-mt-md" />
+            <q-checkbox v-model="pw.show" dense label="Show passwords" class="q-mt-sm" />
+            <error-banner class="q-mt-md" :message="pwError" />
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat color="primary" label="Cancel" v-close-popup />
+            <q-btn type="submit" unelevated color="primary" label="Change password" :disable="!pw.current || pw.next.length < 8 || pw.next !== pw.again" :loading="pwBusy" />
+          </q-card-actions>
+        </q-form>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="confirmOpen" persistent>
       <q-card style="min-width: 320px; max-width: 460px">
         <q-card-section>
@@ -75,7 +102,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
@@ -85,6 +113,7 @@ import ErrorBanner from '../components/ErrorBanner.vue'
 import { friendly } from '../util/errors'
 import { formatDate, formatSize, initials } from '../util/format'
 
+const $q = useQuasar()
 const router = useRouter()
 const auth = useAuthStore()
 const library = useLibraryStore()
@@ -97,6 +126,24 @@ const usage = ref({ used_bytes: 0, limit_bytes: 1 })
 const pct = computed(() => (usedShare.value < 0.01 && usage.value.used_bytes ? '<1' : Math.round(usedShare.value * 100)))
 const usedShare = computed(() => Math.min(1, usage.value.used_bytes / Math.max(1, usage.value.limit_bytes)))
 onMounted(() => { authApi.getUsage().then((u) => { usage.value = u }).catch(() => {}) })
+const pwOpen = ref(false)
+const pw = reactive({ current: '', next: '', again: '', show: false })
+const pwError = ref('')
+const pwBusy = ref(false)
+const resetPw = () => { Object.assign(pw, { current: '', next: '', again: '', show: false }); pwError.value = '' }
+async function changePw() {
+  pwBusy.value = true
+  pwError.value = ''
+  try {
+    await authApi.changePassword(pw.current, pw.next)
+    pwOpen.value = false
+    $q.notify({ type: 'positive', message: 'Your password was changed.' })
+  } catch (e) {
+    pwError.value = e.code === 'bad_current_password' ? 'The current password is wrong.' : friendly(e)
+  } finally {
+    pwBusy.value = false
+  }
+}
 const confirmOpen = ref(false)
 const typed = ref('')
 const busy = ref(false)
