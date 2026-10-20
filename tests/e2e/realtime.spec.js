@@ -23,3 +23,14 @@ test('a recording started elsewhere appears by itself: status, notification, toa
   await page.getByRole('button', { name: 'Mark all as read' }).click()
   await expect(page.getByRole('button', { name: 'Notifications' }).locator('.q-badge')).toHaveCount(0)
 })
+
+test('a lecture being recorded shows how many parts arrived and how many are transcribed', async ({ page }) => {
+  const user = await makeUser('liveinfo')
+  const { module } = await makeSession(user, 'x')
+  const made = (await api('POST', `/modules/${module.id}/sessions`, user, { title: 'Live now' })).json
+  await api('POST', `/sessions/${made.id}/live`, user)
+  await loginAs(page, user)
+  await page.goto(`/sessions/${made.id}`)
+  await expect(page.getByText('Parts received')).toBeVisible()
+  await expect(page.getByText('Transcribed')).toBeVisible()
+})

@@ -63,10 +63,15 @@
           <div class="lk-live-text">
             <div class="lk-live-title">{{ recordingNow ? 'Recording in progress' : 'This recording was not finished' }}</div>
             <div class="lk-meta">
-              <template v-if="recordingNow">A part reaches the server about every 5 minutes. This page updates by itself. Stop the recording in the extension to make the notes.</template>
+              <template v-if="recordingNow">A part reaches the server about every 5 minutes. This page updates by itself. Press Stop on the device that is recording (the extension or the phone app) to make the notes.</template>
               <template v-else>{{ liveTotal ? 'The recording stopped before it was finished. You can make notes from what arrived.' : 'No part of the recording reached the server.' }}</template>
             </div>
           </div>
+        </div>
+        <div class="lk-live-stats">
+          <div><b>{{ liveReceived }}</b><span>{{ liveReceived === 1 ? 'Part received' : 'Parts received' }}</span></div>
+          <div><b>{{ liveMinutes }}</b><span>Minutes so far</span></div>
+          <div><b>{{ liveTranscribed }}</b><span>Transcribed</span></div>
         </div>
         <div v-if="!recordingNow" class="lk-live-actions">
           <q-btn unelevated color="primary" no-caps icon="auto_awesome" label="Finish and make notes" :loading="working" :disable="!liveTotal" @click="finishLive" />
