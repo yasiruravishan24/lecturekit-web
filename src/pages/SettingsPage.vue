@@ -24,14 +24,6 @@
                         @update:model-value="ui.setTheme" />
         </q-card>
 
-        <q-card v-if="auth.user?.email_login" flat bordered class="lk-card lk-set-card">
-          <div class="lk-label q-mb-sm">Password</div>
-          <div class="lk-set-row">
-            <div class="lk-meta">Change the password you use to log in with your email.</div>
-            <q-btn outline color="primary" no-caps icon="lock_reset" label="Change password" @click="pwOpen = true" />
-          </div>
-        </q-card>
-
         <q-card flat bordered class="lk-card lk-set-card">
           <div class="lk-label q-mb-sm">Legal</div>
           <router-link :to="{ path: '/terms', query: { from: 'settings' } }" class="lk-set-link"><q-icon name="gavel" size="20px" /> Terms &amp; Conditions <q-icon name="chevron_right" size="20px" class="lk-set-go" /></router-link>
@@ -55,12 +47,18 @@
           <p class="lk-meta q-mb-none">Your recordings are kept for replay until you delete the lecture. Delete lectures you no longer need to free space.</p>
         </q-card>
 
-        <q-card flat bordered class="lk-card lk-set-card lk-set-danger">
-          <div class="lk-label q-mb-sm text-negative">Danger zone</div>
-          <div class="lk-set-row">
-            <div><div class="lk-set-h">Delete account</div><div class="lk-meta">Removes your courses, lectures, recordings, notes and quizzes for good.</div></div>
-            <q-btn outline color="negative" no-caps icon="delete_forever" label="Delete account" @click="confirmOpen = true" />
-          </div>
+        <q-card flat bordered class="lk-card lk-set-card">
+          <q-expansion-item icon="manage_accounts" label="Manage account" caption="Password and deleting your account" header-class="lk-manage-head" class="lk-manage">
+            <q-separator class="q-my-sm" />
+            <div v-if="auth.user?.email_login" class="lk-set-row q-mb-md">
+              <div><div class="lk-set-h">Change password</div><div class="lk-meta">The password you use to log in with your email.</div></div>
+              <q-btn outline color="primary" no-caps icon="lock_reset" label="Change password" @click="pwOpen = true" />
+            </div>
+            <div class="lk-set-row">
+              <div><div class="lk-set-h text-negative">Delete account</div><div class="lk-meta">Removes your courses, lectures, recordings, notes and quizzes for good.</div></div>
+              <q-btn outline color="negative" no-caps icon="delete_forever" label="Delete account" @click="confirmOpen = true" />
+            </div>
+          </q-expansion-item>
         </q-card>
       </div>
     </div>
@@ -188,6 +186,6 @@ async function remove() {
 .lk-set-facts span { font-size: 12px; color: var(--lk-text-2); }
 .lk-set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .lk-set-h { font-weight: 500; }
-.lk-set-danger { border-color: rgba(193, 0, 21, 0.35) !important; }
+.lk-manage :deep(.lk-manage-head) { padding: 0; min-height: 44px; font-weight: 500; }
 @media (max-width: 900px) { .lk-set { grid-template-columns: 1fr; } }
 </style>

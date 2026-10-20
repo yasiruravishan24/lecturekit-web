@@ -135,6 +135,7 @@ test('register, confirm, make notes from a recording and slides, take the quiz, 
   // settings and deleting the account
   await page.goto('/settings')
   await shot('11-settings')
+  await page.getByText('Manage account', { exact: true }).click()                     // the account actions are folded away until asked for
   await page.getByRole('button', { name: 'Delete account' }).click()
   await page.getByLabel(/Type .* to confirm/).fill(email)
   await page.getByRole('button', { name: 'Delete account' }).last().click()

@@ -6,6 +6,7 @@ test('change the password in Settings', async ({ page }) => {
   const user = await makeUser('pw')
   await loginAs(page, user)
   await page.goto('/settings')
+  await page.getByText('Manage account', { exact: true }).click()
   await page.getByRole('button', { name: 'Change password' }).click()
   await page.getByLabel('Current password').fill('this is not it')
   await page.getByLabel('New password', { exact: true }).fill('a brand new secret')
