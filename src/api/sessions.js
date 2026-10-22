@@ -14,6 +14,8 @@ export function uploadFiles(sessionId, recordings, slides, onProgress, signal) {
 }
 
 export const startProcessing = (id) => data(http.post(`/sessions/${id}/process`))
+// stop what is being made: kind main (notes and quiz: the lecture is deleted), or visuals / replay / deeper (only that stops)
+export const cancel = (id, kind = 'main') => data(http.post(`/sessions/${id}/cancel`, null, { params: { kind } }))
 export const retry = (id) => data(http.post(`/sessions/${id}/retry`))
 export const getJob = (id) => data(http.get(`/jobs/${id}`))
 export const getNotes = (id) => data(http.get(`/sessions/${id}/notes`))
